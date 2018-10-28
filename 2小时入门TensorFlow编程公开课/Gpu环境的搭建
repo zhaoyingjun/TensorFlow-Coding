@@ -1,0 +1,152 @@
+# 一、TensorFLow-Gpu环境的搭建
+
+## 查看nvidia的型号以便安装相应的驱动
+
+lspci | grep -i nvidia
+
+#这一步非常的重要，一定要看清楚自己的驱动型号，以便能够找到正确的cuda和cudnn的型号
+
+
+ ## 禁用nouveau
+
+#在安装cuda的时候,由于涉及到NVIDIA驱动的安装,使得nouveau驱动与NVIDIA驱动冲突,为了能够继续安装,必须禁用此驱动。
+
+#查看是否有nouveau在运行，如果已经在运行了则按照如下的办法进行金融
+
+lsmod | grep nouveau
+
+#通过配置对应配置文件来禁用nouveau
+
+vi /etc/modprobe.d/blacklist-nouveau.conf
+
+#在配置文件中新增或者将对应项修改成如下的配置
+
+blacklist nouveau
+options nouveau modeset=0
+
+#然后重启系统
+
+## 关于gcc降级问题
+
+#如果使用的是CUDA8.0的因为gcc要5.0以下版本问题需要降级，但是因为我们推荐使用的是CUDA9.0，所以不存在这个问题，如果有需要的同学可以参照如下的内容：
+
+sudo apt-get install gcc-4.9
+sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.9 20
+sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-5 10
+sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.9 20
+sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-5 10
+sudo update-alternatives --install /usr/bin/cc cc /usr/bin/gcc 30
+sudo update-alternatives --set cc /usr/bin/gcc
+sudo update-alternatives --install /usr/bin/c++ c++ /usr/bin/g++ 30
+sudo update-alternatives --set c++ /usr/bin/g++
+
+
+## 关于Anaconda的使用
+
+#Anaconda是一个开源的Python发行版本，其包含了conda、Python等180多个科学包及其依赖项，这个的使用按照大家的使用习惯,可以用也可以不用。
+
+wget https://mirrors.tuna.tsinghua.edu.cn/anaconda/archive/Anaconda3-5.1.0-Linux-x86.sh
+
+chmod +x Anaconda3-5.1.0-Linux-x86.sh
+
+./Anaconda3-5.1.0-Linux-x86.sh
+
+
+## CUDA9.0下载和安装配置
+
+
+#CUDA可以在Nvidia的官网下载
+
+https://developer.nvidia.com/cuda-90-download-archive?target_os=Linux
+
+#在选择好自己对应的系统版本后，我们选择runfile进行安装。
+
+#在下载后对cuda的文件权限进行更改，并启动安装
+
+
+chmod +x cuda_9.0.176_384.81_linux.run
+
+
+sudo bash cuda_9.0.176_384.81_linux.run
+
+
+#在安装的过程中会出现一些配置，建议的配置选项如下：
+
+
+-------------------------------------------------------------
+
+Do you accept the previously read EULA?
+
+accept/decline/quit: accept
+
+Install NVIDIA Accelerated Graphics Driver for Linux-x86_64 384.81?
+(y)es/(n)o/(q)uit:y
+
+Do you want to install the OpenGL libraries?
+(y)es/(n)o/(q)uit default is yes :yes
+
+Do you want to run nvidia-xconfig?
+This will update the system X configuration file so that the NVIDIA X driver
+is used. The pre-existing X configuration file will be backed up.
+This option should not be used on systems that require a custom
+X configuration, such as systems with multiple GPU vendors.
+(y)es/(n)o/(q)uit  default is no : no
+
+Install the CUDA 9.0 Toolkit?
+(y)es/(n)o/(q)uit:yes
+
+Enter Toolkit Location
+default is /usr/local/cuda-9.0 :#回车默认即可
+
+
+Do you want to install a symbolic link at /usr/local/cuda?
+(y)es/(n)o/(q)uit:no
+
+Install the CUDA 9.0 Samples?
+(y)es/(n)o/(q)uit:no
+
+
+#在系统环境里设置CUDA的路径
+
+vim ~/.bashrc #编辑配置文件
+#配置内容
+export LD_LIBRARY_PATH=/usr/local/cuda-9.0/lib64:/usr/local/cuda-9.0/extras/CUPTI/lib64:$LD_LIBRARY_PATH
+export CUDA_HOME=/usr/local/cuda-9.0
+export PATH=/usr/local/cuda-9.0/bin:$PATH
+#使配置立即生效
+source ~/.bashrc 
+
+## CUDNN的下载和安装配置
+#cudnn其实只是NVIDIA深度神经网络软件开发包中的其中一种加速库，我们要用TensorFlow也是支持这个加速工具的，但是这个下载比较麻烦需要有Nvidia的账号才能下载。
+
+#cudnn的下载地址
+
+https://developer.nvidia.com/rdp/cudnn-archive
+
+#将下载文件解压并cp到相应的位置
+tar xvzf cudnn-9.0-linux-x64-v7.0.5.1.tgz
+sudo ldconfig /usr/local/cuda/lib64  
+sudo cp cuda/include/cudnn.h /usr/local/cuda/include
+sudo cp cuda/lib64/libcudnn* /usr/local/cuda/lib64
+sudo chmod a+r /usr/local/cuda/include/cudnn.h /usr/local/cuda/lib64/libcudnn*
+
+## 安装TensorFlow-gpu
+
+pip3 install tensorflow-gpu==1.10.1
+
+## 测试安装是否成功
+
+#nvidia-smi可以查看当前系统中的GPU运行情况
+
+#使用一段代码来测试一下Tensoflow-gpu在系统中安装情况，以及能够调用GPU
+
+import tensorflow as tf
+with tf.device('/cpu:0'):
+    a = tf.constant([1.0,2.0,3.0],shape=[3],name='a')
+    b = tf.constant([1.0,2.0,3.0],shape=[3],name='b')
+with tf.device('/gpu:1'):
+    c = a+b
+print(c)
+sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True,log_device_placement=True))
+sess.run(tf.global_variables_initializer())
+print(sess.run(c))
