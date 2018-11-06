@@ -6,9 +6,29 @@ import numpy as np
 import pickle
 import getConfig
 gConfig={}
+gConfig=getConfig.get_config(config_file='config.ini')
+
+"""
+cnnModel的代码结构：
+
+1、定义类
+2、参数初始化，__init__函数
+3、create_conv_layer定义卷积层函数
+4、create_CNN 定义卷积神经网络,可以理解为cnnfouction
+5、dropout_flatten_layer，dropout函数用于CNN网络的dropout
+我们在这里补充一下dropoupt的知识：
+简单来说dropout解决了两个问题：一个是复杂的网络计算量非常大，需要较长的时间计算，一个复杂的网络会造成过拟合，网络的泛化性堪忧。
+那么dropout如何做的？
+a、对于一个有N个节点的神经网络，有了dropout之后就可以看做是2^n个模型的集合了，但此时要训练的参数数目却是不变的，这样的计算复杂度就指数级的下降
+b、dropout它强迫一个神经单元，和随机挑选出来的其他神经单元共同工作，达到好的效果。消除减弱了神经元节点间的联合适应性，增强了泛化能力。
+6、fc_layer:全连接层
+7、step（）：执行训练和预测任务
+
+"""
+
+
 class cnnModel(object):
     def __init__(self,percent,learning_rate,learning_rate_decay_factor):
-
         self.percent=percent
         self.learning_rate=tf.Variable(float(learning_rate), trainable=False)
         self.learning_rate_decay_op = self.learning_rate.assign(self.learning_rate * learning_rate_decay_factor)
@@ -75,46 +95,41 @@ class cnnModel(object):
             num_features = dropout.get_shape()[1:].num_elements()
             layer = tf.reshape(previous_layer, shape=(-1, num_features))  # Flattening the results.
             return layer
-
+        #tf.truncated_normal这是一个正态分布函数，可以符合正态分布的数
         def fc_layer(flattened_layer, num_inputs, num_outputs):
-
-            # Preparing the set of weights for the FC layer. It depends on the number of inputs and number of outputs.
-            fc_weights = tf.Variable(tf.truncated_normal(shape=(num_inputs, num_outputs),
-                                                                         stddev=0.05))
-            # Matrix multiplication between the flattened array and the set of weights.
+            # 根据输入inputs和outputs的数量来生成weights的矩阵
+            fc_weights = tf.Variable(tf.truncated_normal(shape=(num_inputs, num_outputs),stddev=0.05))
+            # 将网络矩阵与权重相乘，随着输入输出的调整来调整每一个网络输入的权重.
             fc_resultl = tf.matmul(flattened_layer, fc_weights)
-            return fc_resultl  #
-
-        num_datatset_classes = 10
-        # Number of rows & columns in each input image. The image is expected to be rectangular Used to reshape the images and specify the input tensor shape.
-        im_dim = 32
-        # Number of channels in rach input image. Used to reshape the images and specify the input tensor shape.
-        num_channels = 3
-        self.data_tensor=tf.placeholder(tf.float32,shape=[None,im_dim, im_dim, num_channels],name='data_tensor')
+            return fc_resultl
+        im_dim=32
+        num_channels=3
+        self.data_tensor=tf.placeholder(tf.float32,shape=[None,im_dim, im_dim,num_channels],name='data_tensor')
         self.label_tensor=tf.placeholder(tf.float32,shape=[None],name='label_tensor')
         keep_prop=tf.Variable(initial_value=0.5,name="keep_prop")
-        fc_result=create_CNN(input_data=self.data_tensor,num_classes=gConfig['num_datatset_classes'],keep_prop=gConfig['keep_prop'])
+        fc_result=create_CNN(input_data=self.data_tensor,num_classes=gConfig['num_dataset_classes'],keep_prop=keep_prop)
         self.softmax_propabilities=tf.nn.softmax(fc_result,name="softmax_probs")
-
         self.softmax_predictions=tf.argmax(self.softmax_propabilities,axis=1)
-
+        #计算交叉熵
         cross_entropy=tf.nn.softmax_cross_entropy_with_logits(logits=tf.reduce_max(input_tensor=self.softmax_propabilities,reduction_indices=[1]),
-                                                               labels=self.label_tensor)
+                                                              labels=self.label_tensor)
+        #计算损失
         cost=tf.reduce_mean(cross_entropy)
         self.ops=tf.train.GradientDescentOptimizer(self.learning_rate).minimize(cost)
+        #保存所有变量的值
         self.saver = tf.train.Saver(tf.all_variables())
+
     def step(self,sess,shuffled_data,shuffled_labels,keeps,dataset_size,forward_only=None):
         keep_prop = tf.placeholder(tf.float32)
         gConfig=getConfig.get_config(config_file='config.ini')
-        #patches_dir="/Users/zhaoyingjun/Learning/tensorflow_coding/data/"#这里一定要用绝对路径，否则的会找不到的
-
+        #是否只进行正向传播，及正向传播是进行预测，反向传播是进行训练
         if forward_only:
             dataset_array = np.random.rand(1, 32, 32, 3)
             dataset_array[0,:,:,:] = shuffled_data
             feed_dict_test={self.data_tensor:dataset_array,keep_prop:1.0
             }
             softmax_propabilities_, softmax_predictions_ = sess.run([self.softmax_propabilities, self.softmax_predictions],
-                                                                 feed_dict=feed_dict_test)
+                                                         feed_dict=feed_dict_test)
             file=gConfig['dataset_path'] + "batches.meta"
             patch_bin_file = open(file, 'rb')
             label_names_dict = pickle.load(patch_bin_file)
@@ -123,10 +138,20 @@ class cnnModel(object):
         else:
             cnn_feed_dict = {self.data_tensor: shuffled_data, self.label_tensor: shuffled_labels, keep_prop: keeps}
             softmax_predictions_, _ = sess.run([self.softmax_predictions, self.ops],feed_dict=cnn_feed_dict)
-            # Calculating number of correctly classified samples.
+            # 计算预测准确的数量
             correct = np.array(np.where(softmax_predictions_ == shuffled_labels))
-            correct = correct.size/(self.percent*dataset_size)
-            return correct
+            correct = correct.size/(self.percent*dataset_size/100)
+            return correct#输出准确率
+
+        """
+        准确率（accuracy）： 正确预测占全部样本的比例
+
+        精准率（precision）：正确预测为正占全部预测为正的比例
+
+        召回率（recall）： 正确预测为正占全部正样本的比例
+        
+        
+        """
 
 
 
