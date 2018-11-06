@@ -197,6 +197,21 @@ class Seq2SeqModel(object):
     targets = [self.decoder_inputs[i + 1]
                for i in xrange(len(self.decoder_inputs) - 1)]
 
+
+"""
+知识点”
+
+lambda表达式
+
+
+
+
+
+
+"""
+
+
+
     # Training outputs and losses.
     if forward_only:
       self.outputs, self.losses = tf.contrib.legacy_seq2seq.model_with_buckets(
