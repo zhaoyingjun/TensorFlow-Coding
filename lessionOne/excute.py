@@ -12,7 +12,7 @@ def read_data(dataset_path, im_dim, num_channels,num_files,images_per_file):
         files_names = os.listdir(dataset_path)  # 获取训练集中训练文件的名称
         """
         在CIFAR10中已经为我们标注和准备好了数据，一时找不到合适的高质量的标注训练集，我们就是使用CIFAR10的来作为我们的训练集。
-        在训练集中一共有50000个训练样本，放到5个二进制文件中心，每个样本有3072个像素点，是32*32*3维度的
+        在训练集中一共有50000个训练样本，放到5个二进制文件中心，每个样本有3072个像素点，是32*3维度的
         """
         #创建空的多维数组用于存放图片二进制数据
         dataset_array = np.zeros(shape=(num_files * images_per_file, im_dim, im_dim, num_channels))
@@ -92,27 +92,29 @@ def train():
     with tf.Session(config=config) as sess:
         model=create_model(sess,False)
         # 开始训练循环，这里没有设置结束条件，知道最终我们手动结束为止，不过大家可以思考一下该如何设置合适的结束条件以及如何设置？
-        step_time, correct = 0.0, 0.0
+        step_time, accuracy = 0.0, 0.0
         current_step = 0
         previous_correct = []
-        while True:
+        while model.learning_rate.eval()>gConfig['end_learning_rate']:
             start_time = time.time()
             shuffled_data, shuffled_labels = get_batch(data=dataset_array, labels=dataset_labels,
                                                              percent=gConfig['percent'])
             step_correct=model.step(sess,shuffled_data,shuffled_labels,gConfig['keeps'],gConfig['dataset_size'],False)
             step_time += (time.time() - start_time) / gConfig['steps_per_checkpoint']
-            correct += step_correct / gConfig['steps_per_checkpoint']
+            accuracy += step_correct / gConfig['steps_per_checkpoint']
             current_step += 1
 
             # 达到一个训练模型保存点后，将模型保存下来
             if current_step % gConfig['steps_per_checkpoint'] == 0:
                 #如果超过三次预测正确率没有升高则改变学习率
-                if len(previous_correct) > 2 and correct < min(previous_correct[-3:]):
+                if len(previous_correct) > 2 and accuracy < min(previous_correct[-3:]):
                     sess.run(model.learning_rate_decay_op)
-                previous_correct.append(correct)
+                previous_correct.append(accuracy)
                 checkpoint_path = os.path.join(gConfig['working_directory'], "cnn.ckpt")
                 model.saver.save(sess, checkpoint_path)
-                print("在", str(gConfig['percent'] *gConfig['dataset_size']/100),"个样本集上训练的准确率", ' : ', correct)
+                print("在", str(gConfig['percent'] *gConfig['dataset_size']/100),"个样本集上训练的准确率", ' : ', accuracy)
+                print("学习率 %.4f 每步耗时 %.2f  " % ( model.learning_rate.eval(),step_time))
+                step_time, accuracy = 0.0,0.0
                 sys.stdout.flush()
 
 
