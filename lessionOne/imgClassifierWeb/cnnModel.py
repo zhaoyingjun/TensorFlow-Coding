@@ -5,6 +5,8 @@ import tensorflow as tf
 import numpy as np
 import pickle
 import getConfig
+
+
 gConfig={}
 gConfig=getConfig.get_config(config_file='config.ini')
 
@@ -116,11 +118,16 @@ class cnnModel(object):
         #保存所有变量的值
         self.saver = tf.train.Saver(tf.all_variables())
 
-    def step(self,sess,shuffled_data,shuffled_labels,keep_prop,dataset_size,forward_only=None):
+    def step(self,sess,shuffled_data,shuffled_labels,graph,forward_only=None):
+
         keep_prop = tf.placeholder(tf.float32)
         gConfig=getConfig.get_config(config_file='config.ini')
         #是否只进行正向传播，及正向传播是进行预测，反向传播是进行训练
         if forward_only:
+            keep_prop = graph.get_tensor_by_name(name="keep_prop:0")
+            #softmax_propabilities = graph.get_tensor_by_name(name="softmax_probs:0")
+            #softmax_predictions = tf.argmax(softmax_propabilities, axis=1)
+            #data_tensor = graph.get_tensor_by_name(name="data_tensor:0")
             dataset_array = np.random.rand(1, 32, 32, 3)
             dataset_array[0,:,:,:] = shuffled_data
             feed_dict_test={self.data_tensor:dataset_array,keep_prop:1.0
@@ -130,8 +137,9 @@ class cnnModel(object):
             file=gConfig['dataset_path'] + "batches.meta"
             patch_bin_file = open(file, 'rb')
             label_names_dict = pickle.load(patch_bin_file)
-            dataset_label_names = label_names_dict[b"label_names"]
-            return dataset_label_names[softmax_predictions_[0]].decode('utf-8')
+            print(label_names_dict)
+            dataset_label_names = label_names_dict["label_names"]
+            return dataset_label_names[softmax_predictions_[0]]
         else:
             cnn_feed_dict = {self.data_tensor: shuffled_data, self.label_tensor: shuffled_labels, keep_prop: gConfig['keeps']}
             softmax_predictions_, _ = sess.run([self.softmax_predictions, self.ops],feed_dict=cnn_feed_dict)
@@ -139,7 +147,7 @@ class cnnModel(object):
 
             correct = np.array(np.where(shuffled_labels==softmax_predictions_ ))
 
-            accuracy = correct.size/(self.percent*dataset_size/100)
+            accuracy = correct.size/(self.percent*gConfig['dataset_size']/100)
             return accuracy #输出准确率
 
         """

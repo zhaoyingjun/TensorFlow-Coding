@@ -54,10 +54,12 @@ def create_model(session,forward_only):
     if ckpt and ckpt.model_checkpoint_path:
         print("Reading model parameters from %s" % ckpt.model_checkpoint_path)
         model.saver.restore(session, ckpt.model_checkpoint_path)
+        session.run(tf.global_variables_initializer())
+        graph = tf.get_default_graph()
     else:
         print("Created model with fresh parameters.")
         session.run(tf.global_variables_initializer())
-    return model
+    return model,graph
 #获取批量处理数据，考虑到配置不同，如果没有GPU建议将percent调小一点，即将训练集调小
 def get_batch(data,labels,percent):
     num_elements = np.uint32(percent * data.shape[0] / 100)
@@ -99,7 +101,7 @@ def train():
             start_time = time.time()
             shuffled_data, shuffled_labels = get_batch(data=dataset_array, labels=dataset_labels,
                                                              percent=gConfig['percent'])
-            step_correct=model.step(sess,shuffled_data,shuffled_labels,gConfig['keeps'],gConfig['dataset_size'],False)
+            step_correct=model.step(sess,shuffled_data,shuffled_labels,False)
             step_time += (time.time() - start_time) / gConfig['steps_per_checkpoint']
             accuracy += step_correct / gConfig['steps_per_checkpoint']
             current_step += 1
@@ -121,11 +123,11 @@ def train():
 def init_session(sess,conf='config.ini'):
     global gConfig
     gConfig=getConfig.get_config(conf)
-    model=create_model(sess,True)
-    return sess, model
+    model,graph=create_model(sess,True)
+    return sess, model,graph
 
-def predict_line(sess,model,img):
-    predict_name=model.step(sess,img,True)
+def predict_line(sess,model,img,graph):
+    predict_name=model.step(sess,img,img,graph,True)
     return predict_name
 
 if __name__=='__main__':
