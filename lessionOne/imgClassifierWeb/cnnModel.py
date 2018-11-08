@@ -113,7 +113,7 @@ class cnnModel(object):
             
         
         #将label变成one-hot编码，因为softmax_propabilities是一个数组，是10个概率，每个概率代表着预测结果属于其index类的概率，为了计算交叉熵，我们需要把label也转换成一个数组
-        self.label_tensor=tf.one_hot(500,self.label_tensor,10)
+        self.label_tensor=tf.one_hot(int(batch_size),self.label_tensor,10)
         #计算交叉熵
         cross_entropy=tf.nn.sparse_softmax_cross_entropy_with_logits(logits=self.softmax_propabilities,
                                                               labels=self.label_tensor)
