@@ -56,10 +56,14 @@ def create_model(session,forward_only):
         model.saver.restore(session, ckpt.model_checkpoint_path)
         session.run(tf.global_variables_initializer())
         graph = tf.get_default_graph()
+
+        return model,graph
+
     else:
         print("Created model with fresh parameters.")
         session.run(tf.global_variables_initializer())
-    return model,graph
+        graph = tf.get_default_graph()
+        return model,graph
 #获取批量处理数据，考虑到配置不同，如果没有GPU建议将percent调小一点，即将训练集调小
 def get_batch(data,labels,percent):
     num_elements = np.uint32(percent * data.shape[0] / 100)
@@ -76,7 +80,6 @@ def train():
     # per_process_gpu_memory_fraction
     gpu_options=tf.GPUOptions(per_process_gpu_memory_fraction=0.7)
     config=tf.ConfigProto(gpu_options=gpu_options)
-
        关于BFC算法：
       将内存分块管理，按块进行空间分配和释放。
      通过split操作将大内存块分解成用户需要的小内存块。
@@ -140,7 +143,3 @@ if __name__=='__main__':
         train()
     elif gConfig['mode']=='server':
         print('Sever Usage:python3 app.py')
-
-
-
-

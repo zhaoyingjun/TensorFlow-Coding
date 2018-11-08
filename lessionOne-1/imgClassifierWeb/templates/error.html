@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link type="text/css" rel="stylesheet" href="{{url_for(endpoint='static', filename='project_styles.css')}}">
+    <meta charset="UTF-8">
+    <title>Error</title>
+</head>
+<body>
+<center>
+    <h1 class="出错啦">Error</h1>
+    <h2 class="error-msg">系统检测出您上传的图片与模型训练所用图片格式不一致，请重新上传.</h2>
+    <a href="{{url_for(endpoint='homepage')}}"><span>Return to homepage</span>.</a>
+</center>
+</body>
+</html>

@@ -103,53 +103,57 @@ class cnnModel(object):
             # 将网络矩阵与权重相乘，随着输入输出的调整来调整每一个网络输入的权重.
             fc_resultl = tf.matmul(flattened_layer, fc_weights)
             return fc_resultl
-        self.data_tensor=tf.placeholder(tf.float32,shape=[None,gConfig['im_dim'], gConfig['im_dim'],gConfig['num_channels']],name='data_tensor')
-        self.label_tensor=tf.placeholder(tf.float32,shape=[None],name='label_tensor')
+        batch_size=gConfig['percent']*gConfig['dataset_size']/100
+        self.data_tensor=tf.placeholder(tf.float32,shape=[batch_size,gConfig['im_dim'], gConfig['im_dim'],gConfig['num_channels']],name='data_tensor')
+        self.label_tensor=tf.placeholder(tf.int32,shape=[batch_size],name='label_tensor')
         keep_prop=tf.Variable(initial_value=0.5,name="keep_prop")
-        fc_result=create_CNN(input_data=self.data_tensor,num_classes=gConfig['num_dataset_classes'],keep_prop=gConfig['keeps'])
-        self.softmax_propabilities=tf.nn.softmax(fc_result,name="softmax_probs")
+        self.fc_result=create_CNN(input_data=self.data_tensor,num_classes=gConfig['num_dataset_classes'],keep_prop=gConfig['keeps'])
+        self.softmax_propabilities=tf.nn.softmax(self.fc_result,name="softmax_probs")
         self.softmax_predictions=tf.argmax(self.softmax_propabilities,axis=1)
+            
+        
+        #将label变成one-hot编码，因为softmax_propabilities是一个数组，是10个概率，每个概率代表着预测结果属于其index类的概率，为了计算交叉熵，我们需要把label也转换成一个数组
+        self.label_tensor=tf.one_hot(500,self.label_tensor,10)
         #计算交叉熵
-        cross_entropy=tf.nn.softmax_cross_entropy_with_logits(logits=tf.reduce_max(input_tensor=self.softmax_propabilities,reduction_indices=[1]),
+        cross_entropy=tf.nn.sparse_softmax_cross_entropy_with_logits(logits=self.softmax_propabilities,
                                                               labels=self.label_tensor)
-        #计算损失
         cost=tf.reduce_mean(cross_entropy)
+
         self.ops=tf.train.GradientDescentOptimizer(self.learning_rate).minimize(cost)
         #保存所有变量的值
         self.saver = tf.train.Saver(tf.all_variables())
 
     def step(self,sess,shuffled_data,shuffled_labels,graph,forward_only=None):
-
+        
         keep_prop = tf.placeholder(tf.float32)
         gConfig=getConfig.get_config(config_file='config.ini')
         #是否只进行正向传播，及正向传播是进行预测，反向传播是进行训练
         if forward_only:
             keep_prop = graph.get_tensor_by_name(name="keep_prop:0")
-            #softmax_propabilities = graph.get_tensor_by_name(name="softmax_probs:0")
-            #softmax_predictions = tf.argmax(softmax_propabilities, axis=1)
-            #data_tensor = graph.get_tensor_by_name(name="data_tensor:0")
-            dataset_array = np.random.rand(1, 32, 32, 3)
+            data_tensor=graph.get_tensor_by_name(name="data_tensor:0")
+            k_size=gConfig['percent']*gConfig['dataset_size']/100
+            dataset_array = np.random.rand(int(k_size), 32, 32, 3)
             dataset_array[0,:,:,:] = shuffled_data
-            feed_dict_test={self.data_tensor:dataset_array,keep_prop:1.0
+            feed_dict_test={data_tensor:dataset_array,keep_prop:1.0
             }
             softmax_propabilities_, softmax_predictions_ = sess.run([self.softmax_propabilities, self.softmax_predictions],
                                                          feed_dict=feed_dict_test)
+
             file=gConfig['dataset_path'] + "batches.meta"
             patch_bin_file = open(file, 'rb')
             label_names_dict = pickle.load(patch_bin_file)
             print(label_names_dict)
             dataset_label_names = label_names_dict["label_names"]
             return dataset_label_names[softmax_predictions_[0]]
-        else:
-            cnn_feed_dict = {self.data_tensor: shuffled_data, self.label_tensor: shuffled_labels, keep_prop: gConfig['keeps']}
-            softmax_predictions_, _ = sess.run([self.softmax_predictions, self.ops],feed_dict=cnn_feed_dict)
-            # 计算预测准确的数量
-        
-            correct = np.array(np.where(softmax_predictions_ == shuffled_labels))
-            print(correct)
+        else:   
+        	
+        	cnn_feed_dict = {self.data_tensor: shuffled_data, self.label_tensor: shuffled_labels, keep_prop: gConfig['keeps']}
+        	softmax_predictions_, _ = sess.run([self.softmax_predictions, self.ops],feed_dict=cnn_feed_dict)
+            # 统计预测争取的数量
+        	correct = np.array(np.where(softmax_predictions_ == shuffled_labels))
 
-            accuracy = correct.size/(self.percent*gConfig['dataset_size']/100)
-            return accuracy #输出准确率
+        	accuracy = correct.size/(self.percent*gConfig['dataset_size']/100)
+        	return accuracy #输出准确率
 
         """
         准确率（accuracy）： 正确预测占全部样本的比例
