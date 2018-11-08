@@ -92,15 +92,15 @@ def train():
                                               num_channels=gConfig['num_channels'],num_files=gConfig['num_files'],images_per_file=gConfig['images_per_file'])
     print("Size of data : ", dataset_array.shape)
     with tf.Session(config=config) as sess:
-        model=create_model(sess,False)
+        model,_=create_model(sess,False)
         # 开始训练循环，这里没有设置结束条件，知道最终我们手动结束为止，不过大家可以思考一下该如何设置合适的结束条件以及如何设置？
         step_time, accuracy = 0.0, 0.0
         current_step = 0
         previous_correct = []
+        shuffled_data, shuffled_labels = get_batch(data=dataset_array, labels=dataset_labels,
+                                                             percent=gConfig['percent'])
         while model.learning_rate.eval()>gConfig['end_learning_rate']:
             start_time = time.time()
-            shuffled_data, shuffled_labels = get_batch(data=dataset_array, labels=dataset_labels,
-                                                             percent=gConfig['percent'])
             step_correct=model.step(sess,shuffled_data,shuffled_labels,False)
             step_time += (time.time() - start_time) / gConfig['steps_per_checkpoint']
             accuracy += step_correct / gConfig['steps_per_checkpoint']
@@ -109,7 +109,7 @@ def train():
             # 达到一个训练模型保存点后，将模型保存下来
             if current_step % gConfig['steps_per_checkpoint'] == 0:
                 #如果超过三次预测正确率没有升高则改变学习率
-                if len(previous_correct) > 2 and accuracy < min(previous_correct[-3:]):
+                if len(previous_correct) > 2 and accuracy == min(previous_correct[-3:]):
                     sess.run(model.learning_rate_decay_op)
                 previous_correct.append(accuracy)
                 checkpoint_path = os.path.join(gConfig['working_directory'], "cnn.ckpt")

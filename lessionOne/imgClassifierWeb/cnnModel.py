@@ -144,8 +144,9 @@ class cnnModel(object):
             cnn_feed_dict = {self.data_tensor: shuffled_data, self.label_tensor: shuffled_labels, keep_prop: gConfig['keeps']}
             softmax_predictions_, _ = sess.run([self.softmax_predictions, self.ops],feed_dict=cnn_feed_dict)
             # 计算预测准确的数量
-
-            correct = np.array(np.where(shuffled_labels==softmax_predictions_ ))
+        
+            correct = np.array(np.where(softmax_predictions_ == shuffled_labels))
+            print(correct)
 
             accuracy = correct.size/(self.percent*gConfig['dataset_size']/100)
             return accuracy #输出准确率
