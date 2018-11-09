@@ -59,12 +59,69 @@ def CNN_predict():
             return flask.render_template(template_name_or_list="error.html", img_shape=img.shape)
     return "遇到非图片格式的未知错误，请联系技术人员解决"
 """
-app.add_url_rule:
+flask路由系统：
+
+1、使用flask.Flask.route() 修饰器。
+2、使用flask.Flask.add_url_rule()函数。
+
+3、直接访问基于werkzeug路由系统的flask.Flask.url_map.
+
+参考知识链接：https://www.jianshu.com/p/e69016bd8f08
+
+1、@app.route('/index.html')
+    def index():
+        return "Hello World!"
+
+2、def index():
+    return "Hello World!"
+    index = app.route('/index.html')(index)
+
+
+
+app.add_url_rule:app.add_url_rule(rule,endpoint,view_func)
+
+关于rule、ednpoint、view_func以及函数注册路由的原理可以参考：https://www.cnblogs.com/eric-nirnava/p/endpoint.html
+
 """
 app.add_url_rule(rule="/predict/", endpoint="predict", view_func=CNN_predict)
 """
 知识点：
-flask.request.method
+flask.request属性
+
+form: 
+一个从POST和PUT请求解析的 MultiDict（一键多值字典）。
+
+args: 
+MultiDict，要操作 URL （如 ?key=value ）中提交的参数可以使用 args 属性:
+
+searchword = request.args.get('key', '')
+
+values: 
+CombinedMultiDict，内容是form和args。 
+可以使用values替代form和args。
+
+cookies: 
+顾名思义，请求的cookies，类型是dict。
+
+stream: 
+在可知的mimetype下，如果进来的表单数据无法解码，会没有任何改动的保存到这个·stream·以供使用。很多时候，当请求的数据转换为string时，使用data是最好的方式。这个stream只返回数据一次。
+
+headers: 
+请求头，字典类型。
+
+data: 
+包含了请求的数据，并转换为字符串，除非是一个Flask无法处理的mimetype。
+
+files: 
+MultiDict，带有通过POST或PUT请求上传的文件。
+
+method: 
+请求方法，比如POST、GET
+
+知识点参考链接：https://blog.csdn.net/yannanxiu/article/details/53116652
+
+
+
 werkzeug
 
 """
