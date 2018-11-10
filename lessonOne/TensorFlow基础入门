@@ -1,0 +1,127 @@
+TensorFlow基础：
+
+TensorFlow三个基础核心概念：计算图、Tensor、Session
+
+计算图：
+在TensorFlow中，计算图是一个有向图，用来描述计算节点以及计算节点之间的关系，所以在TensorFlow中我们存储一个值或者数组的时候，存的其实是这个值或者数组的计算图而不是其本身的数字。我们可以用写一个简单的例子来验证一下：
+
+#GPU版本
+import tensorflow as tf
+g=tf.Graph()
+with g.device("/gpu:0"):
+    #c=lambda a,b:a+b
+   
+    d=tf.constant([10,9,8,7])
+    e=tf.constant([1,2,3,4])
+    f_1=d+f
+    print(f_1.graph)
+    print(d.graph,e.graph)
+    sess=tf.Session()
+    print(sess.run(f_1))
+
+
+#CPU版
+import tensorflow as tf
+
+a=tf.constant([1,2,3,4],name='a')
+b=tf.constant([0,1,2,3],name='b')
+c=a+b
+print(a.graph,b.graph)
+print(c.graph)
+    
+sess=tf.Session()
+    
+print(sess.run(c))
+
+
+
+关于计算图的操作
+1、新建计算图:g=tf.Graph()，但是不同计算图上的张量是不能共享的,这个是存在于变量
+2、指定计算图的使用的device:with g.device("/gpu:0"):
+3、设置默认计算图:with g.as_default:
+4、在会话中可以指定使用的计算图:with tf.Session(graph=g1):
+对于以上操作用代码说话，建议大家和我一起写，这样才会有比较大的体会和能够记住，
+
+import tensorflow as tf
+
+
+g1=tf.Graph()
+with g1.as_default():
+    a=tf.constant([1,2,3],name="a")#用常量试试看
+    b=tf.get_variable('b',initializer=tf.constant_initializer()(shape = [1]))#用变量试试看
+g2=tf.Graph()
+with g2.as_default():
+    a=tf.constant([2,3],name="a")#用常量试试看
+    b=tf.get_variable('b',initializer=tf.constant_initializer()(shape = [3]))#用常量试试看
+
+with tf.Session(graph=g2) as sess:
+    with g1.device("/cpu:0"):
+        tf.global_variables_initializer().run()
+        c=a+1
+        print("常量的情况下",sess.run(c))
+        
+        with tf.variable_scope("", reuse=True):
+            print("变量情况下",sess.run(tf.get_variable("b")))                     
+with tf.Session(graph=g2) as sess:
+    with g2.device("/gpu:0"):
+        tf.global_variables_initializer().run()
+        c=a+1
+        print("常量的情况下",sess.run(c))
+        with tf.variable_scope("", reuse=True):
+            print("变量情况下",sess.run(tf.get_variable("b")))
+            
+张量：
+张量（tensor）可以简单理解为多维数组。其中零阶张量表示标量（scalar），也就是一个数；一阶张量为向量（vector），也就是一维数组；第n阶张量可以理解为一个n维数组。但是张量在Tensorflow中的实现并不是直接采用数组的形式，它只是对Tensorflow中运算结果的引用。在张量中并没有真正保存数字，它保存的是如何得到这些数字的计算过程。
+
+
+import tensorflow as tf
+
+a=tf.constant(2,name='a')
+b=tf.constant([0,1,2,3],name='b')
+c=a*b
+print(a,b)
+print(c)
+    
+sess=tf.Session()
+    
+print(sess.run(c))
+
+
+
+会话：
+在TensorFlow中，计算图的计算过程都是在会话下进行的，同一个会话内的数据是可以共享的，会话结束计算的中间量就会消失。
+
+在TensorFlow需要指定会话。
+
+import tensorflow as tf
+
+with tf.Session as sess:
+     print(sess.run(result))
+
+sess=tf.Session()
+with sess.as_default():
+    
+    print(result.eval())
+
+    
+sess = tf.InteractiveSession()#会自动成为默认会话
+
+
+TensorFlow 基础API介绍
+我们这个课程的是将TensorFlow的高阶API，但是由于在我们的应用案例中不可能都是高阶API，还会涉及到一些常用必须的基础的API，我们在开始讲高阶API之前也先简单讲一下低阶的基础API.根据TensorFlow官网以及在日常的编程中的使用情况，我梳理了以下需要掌握的TensorFlow基础API:
+
+tf.Graph():
+tf.Graph.device():
+tf.Graph.as_default():
+tf.Session():
+tf.Session.run():
+tf.Session.as_default():
+tf.InteractiveSession():
+tf.constant():
+tf.variable():
+tf.get_variable():
+tf.placeholder():
+tf.agrmax
+tf.train()
+tf.nn()
+前面我们在讲解计算图、张量、会话时有些基础的API已经讲解了，在这里我们就不重复讲。我们这里重点讲一下tf.train和tf.nn这两个非常重要的API.
