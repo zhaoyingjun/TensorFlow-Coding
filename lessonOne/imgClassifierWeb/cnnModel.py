@@ -94,7 +94,7 @@ class cnnModel(object):
 
             dropout = tf.nn.dropout(x=previous_layer, keep_prob=keep_prop)
             num_features = dropout.get_shape()[1:].num_elements()
-            layer = tf.reshape(previous_layer, shape=(-1, num_features))  # Flattening the results.
+            layer = tf.reshape(dropout, shape=(-1, num_features))  # Flattening the results.
             return layer
         #tf.truncated_normal这是一个正态分布函数，可以符合正态分布的数
         def fc_layer(flattened_layer, num_inputs, num_outputs):
