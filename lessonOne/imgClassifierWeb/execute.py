@@ -9,7 +9,9 @@ import sys
 gConfig = {}
 
 def read_data(dataset_path, im_dim, num_channels,num_files,images_per_file):
-        files_names = os.listdir(dataset_path)  # 获取训练集中训练文件的名称
+        files_names = os.listdir(dataset_path)
+        print(files_names)
+          # 获取训练集中训练文件的名称
         """
         在CIFAR10中已经为我们标注和准备好了数据，一时找不到合适的高质量的标注训练集，我们就是使用CIFAR10的来作为我们的训练集。
         在训练集中一共有50000个训练样本，放到5个二进制文件中心，每个样本有3072个像素点，是32*3维度的
@@ -22,7 +24,7 @@ def read_data(dataset_path, im_dim, num_channels,num_files,images_per_file):
         #从训练集中读取二进制数据并将其维度转换成32*32*3
         for file_name in files_names:
 
-            if file_name[0:len(file_name) - 1] == "data_batch_":
+            if file_name[0:len(file_name)-1] == "data_batch_":
                 print("正在处理数据 : ", file_name)
                 data_dict = unpickle_patch(dataset_path + file_name)
                 images_data = data_dict[b"data"]
@@ -92,7 +94,10 @@ def train():
 
 
     dataset_array, dataset_labels = read_data(dataset_path=gConfig['dataset_path'], im_dim=gConfig['im_dim'],
-                                              num_channels=gConfig['num_channels'],num_files=gConfig['num_files'],images_per_file=gConfig['images_per_file'])
+                                            num_channels=gConfig['num_channels'],num_files=gConfig['num_files'],images_per_file=gConfig['images_per_file'])
+
+
+    dataset_array_test, dataset_labels_test = read_data(dataset_path=gConfig['dataset_test'], im_dim=gConfig['im_dim'], num_channels=gConfig['num_channels'],num_files=1,images_per_file=gConfig['images_per_file'])
     print("Size of data : ", dataset_array.shape)
     with tf.Session(config=config) as sess:
         model,_=create_model(sess,False)
@@ -102,6 +107,9 @@ def train():
         previous_correct = []
         shuffled_data, shuffled_labels = get_batch(data=dataset_array, labels=dataset_labels,
                                                              percent=gConfig['percent'])
+
+        shuffled_data_test, shuffled_labels_test = get_batch(data=dataset_array_test, labels=dataset_labels_test,
+                                                             percent=5*gConfig['percent'])
         while model.learning_rate.eval()>gConfig['end_learning_rate']:
             start_time = time.time()
             step_correct=model.step(sess,shuffled_data,shuffled_labels,False)
@@ -116,12 +124,35 @@ def train():
                     sess.run(model.learning_rate_decay_op)
                 previous_correct.append(accuracy)
                 checkpoint_path = os.path.join(gConfig['working_directory'], "cnn.ckpt")
-                model.saver.save(sess, checkpoint_path)
-                print("在", str(gConfig['percent'] *gConfig['dataset_size']/100),"个样本集上训练的准确率", ' : ', accuracy)
+                #saver=tf.train.Saver()
+                model.saver.save(sess, checkpoint_path,global_step=model.global_step)
+
+                #sess.run(tf.global_variables_initializer())
+                #以下为增加模型在测试集上的准确率测试
+                graph = tf.get_default_graph()
+
+                softmax_propabilities = graph.get_tensor_by_name(name="softmax_probs:0")
+                softmax_predictions = tf.argmax(softmax_propabilities, axis=1)
+                data_tensor = graph.get_tensor_by_name(name="data_tensor:0")
+                label_tensor = graph.get_tensor_by_name(name="label_tensor:0")
+                keep_prop = graph.get_tensor_by_name(name="keep_prop:0")
+
+                feed_dict_testing = {data_tensor: shuffled_data_test,
+                     label_tensor: shuffled_labels_test,
+                     keep_prop: 1.0}
+
+                softmax_propabilities_, softmax_predictions_ = sess.run([softmax_propabilities, softmax_predictions],
+                                                      feed_dict=feed_dict_testing)
+                
+                correct = np.array(np.where(softmax_predictions_ == shuffled_labels_test))
+                correct = correct.size
+                print("模型在测试集上的准确率为 : ", correct/(gConfig['percent']*gConfig['dataset_size']/100))
+
+
+                print("在", str(gConfig['percent'] *gConfig['dataset_size']/100),"个训练集上训练的准确率", ' : ', accuracy)
                 print("学习率 %.4f 每步耗时 %.2f  " % ( model.learning_rate.eval(),step_time))
                 step_time, accuracy = 0.0,0.0
                 sys.stdout.flush()
-
 
 def init_session(sess,conf='config.ini'):
     global gConfig
