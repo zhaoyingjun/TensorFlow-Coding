@@ -10,7 +10,7 @@ gConfig={}
 
 gConfig=getConfig.get_config(config_file='config.ini')
 
-n_inputs =  7
+n_inputs =  1
 n_hidden1 = 500
 n_hidden2 = 500
 n_hidden3 = 20  # codings
@@ -43,8 +43,8 @@ latent_loss = 0.5 * tf.reduce_sum(
     tf.exp(hidden3_gamma) + tf.square(hidden3_mean) - 1 - hidden3_gamma)
 loss = reconstruction_loss + latent_loss
 
-optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
-training_op = optimizer.minimize(loss)
+optimizer = tf.train.AdamOptimizer(learning_rate=gConfig['learning_rate'])
+training_op = optimizer.minimize(reconstruction_loss)
 
 init = tf.global_variables_initializer()
 saver = tf.train.Saver()
@@ -54,15 +54,9 @@ saver = tf.train.Saver()
 n_epochs = 50
 batch_size = 150
 def read_data(source_file):
-    data_set=pd.read_csv(source_file,sep=' ')
-    data_set.dropna()
-    data_set.as_matrix(columns=None)
-
-   # source= data_util.prepare_custom_data(gConfig['working_directory'],gConfig['input_file'],gConfig['vocabulary_size'])
-     
-     #source_ids=[]
-     #source_ids = [float(x) for x in source]
-    return data_set
+    data=pd.read_csv(source_file,encoding='gbk')
+    dataset=data.fillna(-1).values
+    return dataset
 def get_batch(data,percent):
   num_elements = np.uint32(percent * data.shape[0] / 100)
   shuffled_data = data
@@ -73,25 +67,22 @@ with tf.Session() as sess:
 
    init.run()
    k=gConfig['training_epochs']
-   data_set=read_data(gConfig['source_file'])
+   data_set=read_data(gConfig['input_file'])
    while k>0 :
       n_batches = int(100/gConfig['percent'])+1
       for iteration in range(n_batches):
         X_batch = data_set
+        print (X_batch)
             #get_batch(data_set,gConfig['percent'])
-        sess.run(training_op, feed_dict={X: X_batch})
+        #sess.run(training_op, feed_dict={X: X_batch})
         loss_val, reconstruction_loss_val, latent_loss_val = sess.run([loss, reconstruction_loss, latent_loss], feed_dict={X: X_batch})
         print("\r{}".format(k), "Train total cost:", loss_val, "\tReconstruction loss:", reconstruction_loss_val, "\tLatent loss:", latent_loss_val)
         saver.save(sess, "./my_model_variational_variant.ckpt")
       k=k-1
-   codings = hidden3
-   saver.restore(sess,"./my_model_variational.ckpt")
-   codings_eval = codings.eval(feed_dict={X:data_set})
+   #codings = hidden3
+  # saver.restore(sess,"./my_model_variational.ckpt")
+  #codings_eval = codings.eval(feed_dict={X:data_set})
 
-   output_f = open(gConfig['output_file'], 'w')
-
-   output_f.write(" ".join([str(num) for num in codings_eval]) + "\n")
-   output_f.close()
-
+   
 
 

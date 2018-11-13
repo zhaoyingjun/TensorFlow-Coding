@@ -73,6 +73,7 @@ def get_batch(data,labels,percent):
     np.random.shuffle(shuffled_labels)
     return data[shuffled_labels[:num_elements], :, :, :], shuffled_labels[:num_elements]
 
+
 #定义训练函数
 def train():
     """使用BFC内存管理管理算法，tf.ConfigProto()用于GPU的管理，可以控制GPU的使用率
@@ -105,12 +106,17 @@ def train():
         step_time, accuracy = 0.0, 0.0
         current_step = 0
         previous_correct = []
-        shuffled_data, shuffled_labels = get_batch(data=dataset_array, labels=dataset_labels,
-                                                             percent=gConfig['percent'])
-
-        shuffled_data_test, shuffled_labels_test = get_batch(data=dataset_array_test, labels=dataset_labels_test,
-                                                             percent=5*gConfig['percent'])
+        
         while model.learning_rate.eval()>gConfig['end_learning_rate']:
+
+            shuffled_data, shuffled_labels = get_batch(data=dataset_array, labels=dataset_labels,
+                                                             percent=gConfig['percent'])
+            #print(shuffled_data)
+
+            shuffled_data_test, shuffled_labels_test = get_batch(data=dataset_array_test, labels=dataset_labels_test,
+                                                             percent=5*gConfig['percent'])
+
+
             start_time = time.time()
             step_correct=model.step(sess,shuffled_data,shuffled_labels,False)
             step_time += (time.time() - start_time) / gConfig['steps_per_checkpoint']
