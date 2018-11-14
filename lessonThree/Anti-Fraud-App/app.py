@@ -19,8 +19,11 @@ app = Flask(__name__)
 #示例url:http://0.0.0.0:8088/predict/1/2/3/4/5/6/7/8/9/10/11/12 这里的1...12换成需要进行聚类的值就可以了
 @app.route('/predict/<a>/<b>/<c>/<d>/<e>/<f>/<g>/<h>/<i>/<j>/<k>/<l>', methods=['GET'])
 def predict(a,b,c,d,e,f,g,h,i,j,k,l):
+	#获取url传来的需要进行预测的数据
 	line=[a,b,c,d,e,f,g,h,i,j,k,l]
-	lines=range(12)
+    
+	k=len(line)
+	lines=range(k)
 	lines=[int(i) for i in line]
 	lines=[lines]
 	predict_result=execute.predicts(lines)

@@ -25,7 +25,8 @@ Y_flat = tf.reshape(Y, shape=[-1, seq_len * 1])
 keep_prob = tf.placeholder(dtype=tf.float32, shape=(), name='keep_prob')
 
 dec_in_channels = 1
-n_latent = 8
+#encoder输出的数据维度
+n_latent = gConfig['enc_out_len']
 reshaped_dim = [-1, 7, 7, dec_in_channels]
 inputs_decoder = 49 * dec_in_channels // 2
 
@@ -91,6 +92,6 @@ for i in range(gConfig['vae_steps']):
 
 #保存训练的encode的结果，就是要进行特征压缩后的特征
 sampled_data=pd.DataFrame(sampled_data)
-sampled_data.to_csv('sampled_data.csv')
+sampled_data.to_csv(gConfig['sampled_path'])
 
 
