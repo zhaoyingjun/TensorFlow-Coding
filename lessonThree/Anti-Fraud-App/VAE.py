@@ -26,7 +26,8 @@ keep_prob = tf.placeholder(dtype=tf.float32, shape=(), name='keep_prob')
 
 dec_in_channels = 1
 #encoder输出的数据维度
-n_latent = gConfig['enc_out_len']
+n_latent = gConfig['encoutlen']
+print(n_latent)
 reshaped_dim = [-1, 7, 7, dec_in_channels]
 inputs_decoder = 49 * dec_in_channels // 2
 
