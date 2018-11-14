@@ -5,6 +5,7 @@ import tensorflow as tf
 import numpy as np
 import pickle
 import getConfig
+from collections import Counter
 
 
 gConfig={}
@@ -33,6 +34,7 @@ class cnnModel(object):
         self.percent=percent
         self.learning_rate=tf.Variable(float(learning_rate), trainable=False)
         self.learning_rate_decay_op = self.learning_rate.assign(self.learning_rate * learning_rate_decay_factor)
+        self.global_step = tf.Variable(0, trainable=False)
 
         def create_conv_layer(input_data, filter_size, num_filters):
             filters = tf.Variable(tf.truncated_normal(shape=(
@@ -119,8 +121,10 @@ class cnnModel(object):
                                                               labels=self.label_tensor)
         cost=tf.reduce_mean(cross_entropy)
 
-        self.ops=tf.train.GradientDescentOptimizer(self.learning_rate).minimize(cost)
-        #保存所有变量的值
+        self.ops=tf.train.GradientDescentOptimizer(self.learning_rate).minimize(cost,global_step=self.global_step)
+        #保存所有变量的
+        sess=tf.Session()
+        sess.run(tf.global_variables_initializer())
         self.saver = tf.train.Saver(tf.all_variables())
 
     def step(self,sess,shuffled_data,shuffled_labels,graph,forward_only=None):
@@ -134,6 +138,9 @@ class cnnModel(object):
             k_size=gConfig['percent']*gConfig['dataset_size']/100
             dataset_array = np.random.rand(int(k_size), 32, 32, 3)
             dataset_array[0,:,:,:] = shuffled_data
+            print(shuffled_data)
+            print(dataset_array[0])
+            print(dataset_array)
             feed_dict_test={data_tensor:dataset_array,keep_prop:1.0
             }
             softmax_propabilities_, softmax_predictions_ = sess.run([self.softmax_propabilities, self.softmax_predictions],
@@ -143,10 +150,16 @@ class cnnModel(object):
             patch_bin_file = open(file, 'rb')
             label_names_dict = pickle.load(patch_bin_file)
             print(label_names_dict)
+            print(softmax_predictions_[0])
+            print(softmax_predictions_)
+            print(Counter(softmax_predictions_).most_common(1))
+            
+            #k=Counter(softmax_predictions_).most_common(1)
+            #print(k)
             dataset_label_names = label_names_dict["label_names"]
             return dataset_label_names[softmax_predictions_[0]]
         else:   
-        	
+
         	cnn_feed_dict = {self.data_tensor: shuffled_data, self.label_tensor: shuffled_labels, keep_prop: gConfig['keeps']}
         	softmax_predictions_, _ = sess.run([self.softmax_predictions, self.ops],feed_dict=cnn_feed_dict)
             # 统计预测争取的数量
