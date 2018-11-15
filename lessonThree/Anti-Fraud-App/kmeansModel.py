@@ -45,19 +45,23 @@ def trainAndSaveModel(input_set,steps):
 
     gConfig={}
     gConfig=getConfig.get_config(config_file='config.ini')
-            
-    input_fn = lambda: tf.train.limit_epochs(tf.convert_to_tensor(input_set, dtype=tf.float32), num_epochs=gConfig['num_epochs'])
-    kmeans = tf.contrib.factorization.KMeansClustering(num_clusters=gConfig['k_num'], use_mini_batch=False)
+
+    num_epochs=gConfig['num_epochs']
+    num_clusters=gConfig['num_clusters']  
+    #定义input_fn函数     
+    input_fn = lambda: tf.train.limit_epochs(tf.convert_to_tensor(input_set, dtype=tf.float32), num_epochs=num_epochs)
+    #实例化KMeansClustering
+    kmeans = tf.contrib.factorization.KMeansClustering(num_clusters=num_clusters, use_mini_batch=False)
     previous_centers = None
     for _ in xrange(gConfig['steps']):
         kmeans.train(input_fn)#调用train对训练数据进行训练
         centers = kmeans.cluster_centers()#保存质心
         if previous_centers is not None:
-            print ('delta:', centers - previous_centers)
-            previous_centers = centers
-            print ('score:', kmeans.score(input_fn))
-            #将模型保存下来
-            modelPath = kmeans.export_savedmodel(export_dir_base="kmeansMode/",serving_input_receiver_fn=serving_input_receiver_fn)
+            print ("质心变化幅度:", centers - previous_centers)
+        previous_centers = centers
+        print ("模型评估得分:", kmeans.score(input_fn))
+        #将模型保存下来ˇ
+        modelPath = kmeans.export_savedmodel(export_dir_base="kmeansMode/",serving_input_receiver_fn=serving_input_receiver_fn)
             
     print("训练完成,model文件存放在：")
     print(modelPath)
