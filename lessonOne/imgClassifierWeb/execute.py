@@ -71,6 +71,7 @@ def get_batch(data,labels,percent):
     num_elements = np.uint32(percent * data.shape[0] / 100)
     shuffled_labels = labels
     np.random.shuffle(shuffled_labels)
+    np.random.shuffle(data)
     return data[shuffled_labels[:num_elements], :, :, :], shuffled_labels[:num_elements]
 
 
