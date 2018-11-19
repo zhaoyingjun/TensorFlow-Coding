@@ -6,6 +6,7 @@ import pickle
 import time
 import getConfig
 import sys
+import random
 gConfig = {}
 
 def read_data(dataset_path, im_dim, num_channels,num_files,images_per_file):
@@ -69,11 +70,14 @@ def create_model(session,forward_only):
 #获取批量处理数据，考虑到配置不同，如果没有GPU建议将percent调小一点，即将训练集调小
 def get_batch(data,labels,percent):
     num_elements = np.uint32(percent * data.shape[0] / 100)
-    shuffled_labels = labels
-    np.random.shuffle(shuffled_labels)
-    np.random.shuffle(data)
-    return data[shuffled_labels[:num_elements], :, :, :], shuffled_labels[:num_elements]
-
+    #之所以没有采用tf自带的tf.train.batch是因为那个接口对内存的消耗太大了，我们采用这种随机取index的方法简单又实用。
+    n=np.random.randint(len(labels),size=num_elements)
+    shuffle_datas=[]
+    shuffled_labels=[]
+    for i in n:
+        shuffle_datas.append(data[i,:,:,:])
+        shuffled_labels.append(labels[i])
+    return shuffle_datas,shuffled_labels
 
 #定义训练函数
 def train():
@@ -94,37 +98,37 @@ def train():
     config = tf.ConfigProto()
     config.gpu_options.allocator_type = 'BFC'
 
-
+    #读取训练集的数据到内存中
     dataset_array, dataset_labels = read_data(dataset_path=gConfig['dataset_path'], im_dim=gConfig['im_dim'],
                                             num_channels=gConfig['num_channels'],num_files=gConfig['num_files'],images_per_file=gConfig['images_per_file'])
-
-
-    dataset_array_test, dataset_labels_test = read_data(dataset_path=gConfig['dataset_test'], im_dim=gConfig['im_dim'], num_channels=gConfig['num_channels'],num_files=1,images_per_file=gConfig['images_per_file'])
+    #打印训练数据的维度
     print("Size of data : ", dataset_array.shape)
+    #读取测试数据到内存中
+    dataset_array_test, dataset_labels_test = read_data(dataset_path=gConfig['dataset_test'], im_dim=gConfig['im_dim'], num_channels=gConfig['num_channels'],num_files=1,images_per_file=gConfig['images_per_file'])
+    #打印测试数据的维度
+    print("Size of data : ", dataset_array_test.shape)
+
     with tf.Session(config=config) as sess:
         model,_=create_model(sess,False)
-        # 开始训练循环，这里没有设置结束条件，知道最终我们手动结束为止，不过大家可以思考一下该如何设置合适的结束条件以及如何设置？
+
         step_time, accuracy = 0.0, 0.0
         current_step = 0
         previous_correct = []
-        
+        # 开始训练循环，这里没有设置结束条件，当学习率下降到为0时停止
         while model.learning_rate.eval()>gConfig['end_learning_rate']:
 
-            shuffled_data, shuffled_labels = get_batch(data=dataset_array, labels=dataset_labels,
+            shuffled_datas, shuffled_labels = get_batch(data=dataset_array, labels=dataset_labels,
                                                              percent=gConfig['percent'])
-            #print(shuffled_data)
-
-            shuffled_data_test, shuffled_labels_test = get_batch(data=dataset_array_test, labels=dataset_labels_test,
-                                                             percent=5*gConfig['percent'])
-
+            shuffled_datas_test, shuffled_labels_test = get_batch(data=dataset_array_test, labels=dataset_labels_test,
+                                                             percent=gConfig['percent']*5)
 
             start_time = time.time()
-            step_correct=model.step(sess,shuffled_data,shuffled_labels,False)
+            step_correct=model.step(sess,shuffled_datas,shuffled_labels,False)
             step_time += (time.time() - start_time) / gConfig['steps_per_checkpoint']
             accuracy += step_correct / gConfig['steps_per_checkpoint']
             current_step += 1
 
-            # 达到一个训练模型保存点后，将模型保存下来
+            # 达到一个训练模型保存点后，将模型保存下来，并打印出这个保存点的平均准确率
             if current_step % gConfig['steps_per_checkpoint'] == 0:
                 #如果超过三次预测正确率没有升高则改变学习率
                 if len(previous_correct) > 2 and accuracy == min(previous_correct[-3:]):
@@ -134,18 +138,18 @@ def train():
                 #saver=tf.train.Saver()
                 model.saver.save(sess, checkpoint_path,global_step=model.global_step)
 
-                #sess.run(tf.global_variables_initializer())
+            
                 #以下为增加模型在测试集上的准确率测试
                 graph = tf.get_default_graph()
-
+                #以下获取默认计算图的参数
                 softmax_propabilities = graph.get_tensor_by_name(name="softmax_probs:0")
                 softmax_predictions = tf.argmax(softmax_propabilities, axis=1)
                 data_tensor = graph.get_tensor_by_name(name="data_tensor:0")
                 label_tensor = graph.get_tensor_by_name(name="label_tensor:0")
                 keep_prop = graph.get_tensor_by_name(name="keep_prop:0")
 
-                feed_dict_testing = {data_tensor: shuffled_data_test,
-                     label_tensor: shuffled_labels_test,
+                feed_dict_testing = {data_tensor: shuffled_datas_test,
+                    label_tensor: shuffled_labels_test,
                      keep_prop: 1.0}
 
                 softmax_propabilities_, softmax_predictions_ = sess.run([softmax_propabilities, softmax_predictions],
@@ -153,13 +157,15 @@ def train():
                 
                 correct = np.array(np.where(softmax_predictions_ == shuffled_labels_test))
                 correct = correct.size
-                print("模型在测试集上的准确率为 : ", correct/(gConfig['percent']*gConfig['dataset_size']/100))
-
-
+                #打印出模型在训练集上的准确率
                 print("在", str(gConfig['percent'] *gConfig['dataset_size']/100),"个训练集上训练的准确率", ' : ', accuracy)
                 print("学习率 %.4f 每步耗时 %.2f  " % ( model.learning_rate.eval(),step_time))
                 step_time, accuracy = 0.0,0.0
-                sys.stdout.flush()
+                
+                #打印出模型在测试集上的准确率
+                print("模型在测试集上的准确率为 : ", correct/(gConfig['percent']*gConfig['dataset_size']/100))
+
+                sys.stdout.flush()   
 
 def init_session(sess,conf='config.ini'):
     global gConfig
