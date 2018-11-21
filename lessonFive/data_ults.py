@@ -15,7 +15,7 @@ conv_path = gConfig['resource_data']
 
 #定义csv的列名，用于区分特征列和标示列
 
-COLUMNS = ['1','2',  '3',  '4',  '5',  '6',  '7',  '8',  '9',  '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26', '27', '28', '29', '30', '31']
+COLUMNS = ['1','2',  '3',  '4',  '5',  '6',  '7',  '8',  '9',  '10', '11', '12', '13', '14', '15', '16', '29', '30', '31']
 
 resource_data=pd.read_csv(conv_path,skipinitialspace=True,skiprows=1, names=COLUMNS,low_memory=False)
 #利用pd 的dataframe特性进行缺省值补充
@@ -28,7 +28,7 @@ df.fillna(method='pad')
 
 df.fillna(method='bfill',limit=1)
 
-df.fillna(df.mean()
+df.fillna(df.mean()）
 
 dataframe.to_csv
 

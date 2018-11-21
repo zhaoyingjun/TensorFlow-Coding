@@ -15,9 +15,9 @@ gConfig={}
 
 gConfig=getConfig.get_config(config_file='config.ini')
 
-COLUMNS = ['1','2',  '3',  '4',  '5',  '6',  '7',  '8',  '9',  '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26', '27', '28', '29', '30', '31']
+COLUMNS = ['1','2',  '3',  '4',  '5',  '6',  '7',  '8',  '9',  '10', '11', '12', '13', '14', '15', '16', '29', '30', '31']
 
-FEATURES=['1','2',  '3',  '4',  '5',  '6',  '7',  '8',  '9',  '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26', '27', '28', '29', '30']
+FEATURES=['1','2',  '3',  '4',  '5',  '6',  '7',  '8',  '9',  '10', '11', '12', '13', '14', '15', '16', '29', '30']
 
 LABEL=['31']
 
@@ -54,7 +54,7 @@ def train():
   feature_cols = [tf.contrib.layers.real_valued_column(k) for k in FEATURES]
 
  # 构造一个4层，每层105个神经元的全连接的DNN计算图.
-  classifier = tf.contrib.learn.DNNClassifier(feature_columns=feature_cols,hidden_units=[105, 105, 105, 105 ],model_dir=gConfig['model_dir'])
+  classifier = tf.contrib.learn.DNNClassifier(feature_columns=feature_cols,hidden_units=[105, 105, 105, 105 ],dropout=gConfig['keeps'],model_dir=gConfig['model_dir'])
   
   loss_score=1
   # 开始进行训练，知道满足条件后停止
