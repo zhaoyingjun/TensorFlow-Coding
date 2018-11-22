@@ -198,30 +198,17 @@ class Seq2SeqModel(object):
                for i in xrange(len(self.decoder_inputs) - 1)]
 
 
-"""
-知识点”
-
-lambda表达式
-
-
-
-
-
-
-"""
-
-
 
     # Training outputs and losses.
     if forward_only:
-      self.outputs, self.losses = tf.contrib.legacy_seq2seq.model_with_buckets(
-          self.encoder_inputs, self.decoder_inputs, targets,
-          self.target_weights, buckets, lambda x, y: seq2seq_f(x, y, True),
-          softmax_loss_function=softmax_loss_function)
+        self.outputs, self.losses = tf.contrib.legacy_seq2seq.model_with_buckets(
+        self.encoder_inputs, self.decoder_inputs, targets,
+        self.target_weights, buckets, lambda x, y: seq2seq_f(x, y, True),
+        softmax_loss_function=softmax_loss_function)
       # If we use output projection, we need to project outputs for decoding.
-      if output_projection is not None:
-        for b in xrange(len(buckets)):
-          self.outputs[b] = [
+        if output_projection is not None:
+           for b in xrange(len(buckets)):
+             self.outputs[b] = [
               tf.matmul(output, output_projection[0]) + output_projection[1]
               for output in self.outputs[b]
           ]
