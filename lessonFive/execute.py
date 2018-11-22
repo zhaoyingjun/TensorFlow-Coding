@@ -10,6 +10,8 @@ import numpy as np
 import getConfig
 import sys
 
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
 #获取配置和数据特征列
 gConfig={}
 
@@ -60,11 +62,11 @@ def train():
   # 开始进行训练，知道满足条件后停止
   while loss_score>gConfig['end_loss']:
   
-      classifier.fit(input_fn=lambda: input_fn(training_set))
+      classifier.fit(input_fn=lambda: input_fn(training_set),steps=100)
       # 测试和评价模型的准确度
       ev = classifier.evaluate(input_fn=lambda: input_fn(test_set), steps=1)
-      loss_score = ev["loss"]
-      print("Loss: {0:f}".format(loss_score))
+      accuracy_score = ev["accuracy"]
+      print("模型准确率: {0:f}".format(accuracy_score))
 
 def init_session(sess,conf='config.ini'):
     global gConfig
