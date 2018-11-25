@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" type="text/css" href="{{url_for(endpoint='static', filename='project_styles.css')}}">
+    <script type="text/javascript" src="{{url_for(endpoint='static', filename='result.js')}}"></script>
+    <meta charset="UTF-8">
+    <title>图片分类预测结果</title>
+</head>
+<body onload="show_alert('{{predicted_class}}')">
+<center><h1>图片里是 : <span>{{predicted_class}}</span></h1>
+    <br>
+    <a href="{{url_for(endpoint='homepage')}}"><span>返回首页</span>.</a>
+</center>
+</body>
+</html>

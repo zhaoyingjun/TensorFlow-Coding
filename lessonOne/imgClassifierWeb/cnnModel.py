@@ -106,7 +106,7 @@ class cnnModel(object):
             fc_resultl = tf.matmul(flattened_layer, fc_weights)
             return fc_resultl
         batch_size=gConfig['percent']*gConfig['dataset_size']/100
-        self.data_tensor=tf.placeholder(tf.float32,shape=tf.placeholder(tf.float32,shape=[batch_size,gConfig['im_dim'], gConfig['im_dim'],gConfig['num_channels']],name='data_tensor'))
+        self.data_tensor=tf.placeholder(tf.float32,shape=[batch_size,gConfig['im_dim'], gConfig['im_dim'],gConfig['num_channels']],name='data_tensor')
         self.label_tensor=tf.placeholder(tf.int32,shape=[batch_size],name='label_tensor')
         keep_prop=tf.Variable(initial_value=0.5,name="keep_prop")
         self.fc_result=create_CNN(input_data=self.data_tensor,num_classes=gConfig['num_dataset_classes'],keep_prop=gConfig['keeps'])

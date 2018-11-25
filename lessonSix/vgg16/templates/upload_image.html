@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" type="text/css" href="{{url_for(endpoint='static', filename='project_styles.css')}}">
+    <meta charset="UTF-8">
+    <title>上传图片</title>
+</head>
+<body>
+<form enctype="multipart/form-data" method="post" action="http://localhost:7777/upload/">
+    <center>
+    <h3>请上传与训练集格式一致的图片，否则可能会导致出错.</h3>
+    <input type="file" name="image_file" accept="image/*"><br>
+    <input type="submit" value="确定上传">
+    </center>
+</form>
+</body>
+</html>
