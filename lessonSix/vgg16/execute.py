@@ -147,11 +147,11 @@ def train():
                 softmax_predictions = tf.argmax(softmax_propabilities, axis=1)
                 data_tensor = graph.get_tensor_by_name(name="data_tensor:0")
                 label_tensor = graph.get_tensor_by_name(name="label_tensor:0")
-                keep_prop = graph.get_tensor_by_name(name="keep_prop:0")
+                keep_prob = graph.get_tensor_by_name(name="keep_prob:0")
 
                 feed_dict_testing = {data_tensor: shuffled_datas_test,
                     label_tensor: shuffled_labels_test,
-                     keep_prop: 1.0}
+                     keep_prob: 1.0}
 
                 softmax_propabilities_, softmax_predictions_ = sess.run([softmax_propabilities, softmax_predictions],
                                                       feed_dict=feed_dict_testing)
