@@ -57,11 +57,8 @@ def create_model(session,forward_only):
     if ckpt and ckpt.model_checkpoint_path:
         print("Reading model parameters from %s" % ckpt.model_checkpoint_path)
         model.saver.restore(session, ckpt.model_checkpoint_path)
-        session.run(tf.global_variables_initializer())
         graph = tf.get_default_graph()
-
         return model,graph
-
     else:
         print("Created model with fresh parameters.")
         session.run(tf.global_variables_initializer())
@@ -130,8 +127,8 @@ def train():
 
             # 达到一个训练模型保存点后，将模型保存下来，并打印出这个保存点的平均准确率
             if current_step % gConfig['steps_per_checkpoint'] == 0:
-                #如果超过三次预测正确率没有升高则改变学习率
-                if len(previous_correct) > 2 and accuracy < min(previous_correct[-3:]):
+                #如果超过5次预测正确率没有升高则改变学习率
+                if len(previous_correct) > 2 and accuracy < min(previous_correct[-5:]):
                     sess.run(model.learning_rate_decay_op)
                 previous_correct.append(accuracy)
                 checkpoint_path = os.path.join(gConfig['working_directory'], "cnn.ckpt")

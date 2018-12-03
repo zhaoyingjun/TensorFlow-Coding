@@ -12,8 +12,8 @@ import time
 import hashlib
 import threading
 import execute
+import VAE
 
-#
 app = Flask(__name__) 
 #路由注解，我们这里使用的是path的形式进行传参
 #示例url:http://0.0.0.0:8088/predict/1/2/3/4/5/6/7/8/9/10/11/12 这里的1...12换成需要进行聚类的值就可以了
@@ -26,6 +26,7 @@ def predict(a,b,c,d,e,f,g,h,i,j,k,l):
 	lines=range(k)
 	lines=[int(i) for i in line]
 	lines=[lines]
+	lines=VAE.vae_encoder(VAE.sess,lines)
 	predict_result=execute.predicts(lines)
 
 	return jsonify( { 'result of cluster': str(predict_result) } )

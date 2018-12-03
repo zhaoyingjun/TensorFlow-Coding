@@ -45,52 +45,85 @@ class cnnModel(object):
             conv_layer = tf.nn.conv2d(input=input_data,
                                               filter=filters,
                                               strides=[1, 1, 1, 1],
-                                              padding="VALID")
+                                              padding="SAME")
             print("Size of conv result : ", conv_layer.shape)
 
             return filters, conv_layer
 
         def create_CNN(input_data, num_classes, keep_prop):
-            filters1, conv_layer1 = create_conv_layer(input_data=input_data, filter_size=5, num_filters=4)
+            filters1, conv_layer1 = create_conv_layer(input_data=input_data, filter_size=3, num_filters=64)
             relu_layer1 = tf.nn.relu(conv_layer1)
             print("Size of relu1 result : ", relu_layer1.shape)
             max_pooling_layer1 = tf.nn.max_pool(value=relu_layer1,
                                                         ksize=[1, 2, 2, 1],
                                                         strides=[1, 1, 1, 1],
-                                                        padding="VALID")
+                                                        padding="SAME")
             print("Size of maxpool1 result : ", max_pooling_layer1.shape)
 
-            filters2, conv_layer2 = create_conv_layer(input_data=max_pooling_layer1, filter_size=7, num_filters=3)
+            filters2, conv_layer2 = create_conv_layer(input_data=max_pooling_layer1, filter_size=3, num_filters=64)
             relu_layer2 = tf.nn.relu(conv_layer2)
             print("Size of relu2 result : ", relu_layer2.shape)
             max_pooling_layer2 = tf.nn.max_pool(value=relu_layer2,
                                                         ksize=[1, 2, 2, 1],
-                                                        strides=[1, 1, 1, 1],
-                                                        padding="VALID")
+                                                        strides=[1, 2, 2, 1],
+                                                        padding="SAME")
             print("Size of maxpool2 result : ", max_pooling_layer2.shape)
 
-            # Conv layer with 2 filters and a filter sisze of 5x5.
-            filters3, conv_layer3 = create_conv_layer(input_data=max_pooling_layer2, filter_size=5, num_filters=2)
+        
+            filters3, conv_layer3 = create_conv_layer(input_data=max_pooling_layer2, filter_size=3, num_filters=64)
             relu_layer3 = tf.nn.relu(conv_layer3)
             print("Size of relu3 result : ", relu_layer3.shape)
             max_pooling_layer3 = tf.nn.max_pool(value=relu_layer3,
                                                         ksize=[1, 2, 2, 1],
-                                                        strides=[1, 1, 1, 1],
+                                                        strides=[1, 2, 2, 1],
                                                         padding="VALID")
             print("Size of maxpool3 result : ", max_pooling_layer3.shape)
 
-            # Adding dropout layer before the fully connected layers to avoid overfitting.
-            flattened_layer = dropout_flatten_layer(previous_layer=max_pooling_layer3, keep_prop=keep_prop)
 
-            # First fully connected (FC) layer. It accepts the result of the dropout layer after being flattened (1D).
+
+            filters4, conv_layer4 = create_conv_layer(input_data=max_pooling_layer3, filter_size=3, num_filters=128)
+            relu_layer4 = tf.nn.relu(conv_layer4)
+            print("Size of relu4 result : ", relu_layer4.shape)
+            max_pooling_layer4 = tf.nn.max_pool(value=relu_layer4,
+                                                        ksize=[1, 2, 2, 1],
+                                                        strides=[1, 2, 2, 1],
+                                                        padding="SAME")
+            print("Size of maxpool4 result : ", max_pooling_layer4.shape)
+            
+            
+            
+            filters5, conv_layer5 = create_conv_layer(input_data=max_pooling_layer4, filter_size=3, num_filters=128)
+            relu_layer5 = tf.nn.relu(conv_layer5)
+            print("Size of relu5 result : ", relu_layer5.shape)
+            max_pooling_layer5 = tf.nn.max_pool(value=relu_layer5,
+                                                        ksize=[1, 2, 2, 1],
+                                                        strides=[1, 2, 2, 1],
+                                                        padding="SAME")
+            print("Size of maxpool5 result : ", max_pooling_layer5.shape)
+            
+            
+            
+            filters6, conv_layer6 = create_conv_layer(input_data=max_pooling_layer5, filter_size=3, num_filters=128)
+            relu_layer6 = tf.nn.relu(conv_layer6)
+            print("Size of relu6 result : ", relu_layer6.shape)
+            max_pooling_layer6 = tf.nn.max_pool(value=relu_layer6,
+                                                        ksize=[1, 2, 2, 1],
+                                                        strides=[1, 2, 2, 1],
+                                                        padding="SAME")
+            print("Size of maxpool6 result : ", max_pooling_layer6.shape)
+
+            # 将输出维度降为一维，并增加dropout防止过拟合
+            flattened_layer = dropout_flatten_layer(previous_layer=max_pooling_layer6, keep_prop=keep_prop)
+
+            # 全连接网络+dropout
             fc_resultl = fc_layer(flattened_layer=flattened_layer,
                                   num_inputs=flattened_layer.get_shape()[1:].num_elements(),
                                   num_outputs=200)
-            # Second fully connected layer accepting the output of the previous fully connected layer. Number of outputs is equal to the number of dataset classes.
+            # 全连接网络+dropout，这里的网络输出的数量要和标注的数量一致
             fc_result2 = fc_layer(flattened_layer=fc_resultl, num_inputs=fc_resultl.get_shape()[1:].num_elements(),
                                   num_outputs=num_classes)
             print("Fully connected layer results : ", fc_result2)
-            return fc_result2  # Returning the result of the last FC layer.
+            return fc_result2  
 
         def dropout_flatten_layer(previous_layer, keep_prop):
 

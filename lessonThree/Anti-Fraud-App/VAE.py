@@ -4,17 +4,14 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from tensorflow.examples.tutorials.mnist import input_data
 import getConfig
+import sys
+
+import os
 gConfig={}
 gConfig=getConfig.get_config(config_file='config.ini')
 #定义训练数据的维度
 seq_len=gConfig['seqlen']
 
-#class vaeModel(object):
-    
-   # def __init__(self, learning_rate,learning_rate_decay_factor):
-   #     self.learning_rate=tf.Variable(float(learning_rate), trainable=False)
-   #     self.learning_rate_decay_op = self.learning_rate.assign(self.learning_rate * learning_rate_decay_factor)
-    #    self.global_step = tf.Variable(0, trainable=False)
 
 #读取数据
 def read_data(source_file):
@@ -76,6 +73,7 @@ def decoder(sampled_z, keep_prob):
           decoder_set = tf.reshape(y_out, shape=[-1, seq_len, 1])
           return decoder_set
 #定义计算loss以及进行优化器优化的一系列tensor
+global_step = tf.Variable(0, trainable=False)
 sampled, mn, sd = encoder(X_in, keep_prob)
 dec = decoder(sampled, keep_prob)
 unreshaped = tf.reshape(dec, [-1, seq_len*1])
@@ -83,20 +81,55 @@ img_loss = tf.reduce_sum(tf.squared_difference(unreshaped, Y_flat), 1)
 latent_loss = -0.5 * tf.reduce_sum(1.0 + 2.0 * sd - tf.square(mn) - tf.exp(2.0 * sd), 1)
 dst_loss=img_loss+latent_loss
 loss = tf.reduce_mean(img_loss + latent_loss)
-optimizer = tf.train.AdamOptimizer(gConfig['learning_rate']).minimize(loss)
+optimizer = tf.train.AdamOptimizer(gConfig['learning_rate']).minimize(loss,global_step=global_step)
 sess = tf.Session()
 sess.run(tf.global_variables_initializer())
-       
+saver = tf.train.Saver(tf.all_variables())
+
+
+def vae_train():       
 
 #开始vae的训练
-for i in range(gConfig['vae_steps']):
-    batch=dataset
-    sess.run(optimizer, feed_dict = {X_in: batch, Y: batch, keep_prob: 0.8})
-    if not i % 200:
+  for i in range(gConfig['vae_steps']):
+     batch=dataset
+#通过循环训练来通过优化器进行BP计算，进而更新参数使网络进行拟合，这里使用的是fullbatch模式
+     sess.run(optimizer, feed_dict = {X_in: batch, Y: batch, keep_prob: 0.8})
+#根据checkpoint点对网络的收敛情况进行监测并保存下来模型     
+     if not i % 200:
         ls, d, i_ls, d_ls, mu, sampled_data = sess.run([loss, dec, img_loss, dst_loss, mn, sampled], feed_dict = {X_in: batch, Y: batch, keep_prob: 1.0})
-
         print(i, ls, np.mean(i_ls), np.mean(d_ls))
+        checkpoint_path = os.path.join(gConfig['working_directory'], "vae.ckpt")
+        saver=tf.train.Saver()
+        saver.save(sess,checkpoint_path,global_step=global_step)
+#最后将训练集的所有的数据的encoder数据保存下来，用于接下来的kmeans训练
+  sampled_data = sess.run(sampled, feed_dict = {X_in: batch, Y: batch, keep_prob: 1.0})
+  sampled_data=pd.DataFrame(sampled_data)
+  sampled_data.to_csv(gConfig['sampled_path'])
 
-#保存训练的encode的结果，就是要进行特征压缩后的特征
-sampled_data=pd.DataFrame(sampled_data)
-sampled_data.to_csv(gConfig['sampled_path'])
+#定义
+def vae_encoder(sess,input_data):
+
+  
+  ckpt=tf.train.get_checkpoint_state(gConfig['working_directory'])
+  if ckpt and ckpt.model_checkpoint_path:
+        print("Reading model parameters from %s" % ckpt.model_checkpoint_path)
+        saver.restore(sess, ckpt.model_checkpoint_path)
+        graph = tf.get_default_graph()
+
+  sampled_data = sess.run(sampled, feed_dict = {X_in: input_data, Y: input_data, keep_prob: 1.0})
+
+  return sampled_data
+
+
+if __name__=='__main__':
+  if len(sys.argv) - 1:
+     gConfig = getConfig(sys.argv[1])
+  else:
+        # get configuration from config.ini
+     gConfig = getConfig.get_config()
+  if gConfig['mode']=='train':
+        vae_train()
+  elif gConfig['mode']=='server':
+     print('Sever Usage:python3 app.py')
+      
+
