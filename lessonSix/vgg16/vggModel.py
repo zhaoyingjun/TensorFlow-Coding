@@ -26,7 +26,6 @@ tf.truncated_normal_initializer
 l2_regularizer
 
 
-
 """
 
 class vggModel(object):
