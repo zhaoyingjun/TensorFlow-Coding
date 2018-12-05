@@ -59,7 +59,7 @@ def train():
   classifier = tf.contrib.learn.DNNClassifier(feature_columns=feature_cols,hidden_units=[105, 105, 105, 105 ],dropout=gConfig['keeps'],model_dir=gConfig['model_dir'])
   
   loss_score=1
-  # 开始进行训练，知道满足条件后停止
+  # 开始进行训练，只到满足条件后停止
   while loss_score>gConfig['end_loss']:
   
       classifier.fit(input_fn=lambda: input_fn(training_set),steps=100)
