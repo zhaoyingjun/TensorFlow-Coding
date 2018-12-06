@@ -18,7 +18,7 @@ def train():
  config.gpu_options.allocator_type = 'BFC'
 
 #读取数据
- dataarray=read_data(gConfig['input_file'])
+ dataarray=read_data(gConfig['kmean_train_file'])
 
 
  print("Size of data : ",dataarray.shape)

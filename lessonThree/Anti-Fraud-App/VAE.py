@@ -18,7 +18,7 @@ def read_data(source_file):
     data=pd.read_csv(source_file,encoding='utf-8')
     dataset=data.values
     return dataset
-dataset = read_data(gConfig['input_file'])
+dataset = read_data(gConfig['vae_train_file'])
 
 tf.reset_default_graph()
 
