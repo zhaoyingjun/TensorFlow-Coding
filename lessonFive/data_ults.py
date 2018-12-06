@@ -15,7 +15,7 @@ conv_path = gConfig['resource_data']
 
 #定义csv的列名，用于区分特征列和标示列
 
-COLUMNS = ['1','2',  '3',  '4',  '5',  '6',  '7',  '8',  '9',  '10', '11', '12', '13', '14', '15', '16', '29', '30', '31']
+COLUMNS = ['1','2','3','4','5','6','7','8','9','10','11','12','13', '14', '15', '16', '29', '30', '31']
 
 resource_data=pd.read_csv(conv_path,skipinitialspace=True,skiprows=1, names=COLUMNS,low_memory=False)
 #利用pd 的dataframe特性进行缺省值补充
@@ -55,6 +55,9 @@ def sample_test_data(resource_data,TESTSET_SIZE):
 	    train_data_tocsv=pd.DataFrame(train_data)
 
 	    test_data_tocsv=pd.DataFrame(test_data)
+
+	    #train_data_tocsv=(train_data_tocsv - train_data_tocsv.min())/(train_data_tocsv.max() - train_data_tocsv.min())
+	    #test_data_tocsv=(test_data_tocsv - test_data_tocsv.min()) / (test_data_tocsv.max() - test_data_tocsv.min())
 
 	    train_data_path=gConfig['training_set']
 

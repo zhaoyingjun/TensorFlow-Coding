@@ -9,25 +9,23 @@ import pandas as pd
 import numpy as np
 import getConfig
 import sys
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-
+tf.logging.set_verbosity(tf.logging.ERROR)
 #获取配置和数据特征列
 gConfig={}
 
 gConfig=getConfig.get_config(config_file='config.ini')
 
-COLUMNS = ['1','2',  '3',  '4',  '5',  '6',  '7',  '8',  '9',  '10', '11', '12', '13', '14', '15', '16', '29', '30', '31']
+COLUMNS = [ '29', '30', '31']
 
-FEATURES=['1','2',  '3',  '4',  '5',  '6',  '7',  '8',  '9',  '10', '11', '12', '13', '14', '15', '16', '29', '30']
+#COLUMNS = ['1','2','3','4','5']
+
+FEATURES=[ '29', '30']
 
 LABEL=['31']
 
 #定义GPU的内存管理算法
-
-config = tf.ConfigProto()
-config.gpu_options.allocator_type = 'BFC'
-
 #定义输入函数
 def input_fn(data_set):
   feature_cols = {k: tf.constant(data_set[k].values) for k in FEATURES}
@@ -56,7 +54,7 @@ def train():
   feature_cols = [tf.contrib.layers.real_valued_column(k) for k in FEATURES]
 
  # 构造一个4层，每层105个神经元的全连接的DNN计算图.
-  classifier = tf.contrib.learn.DNNClassifier(feature_columns=feature_cols,hidden_units=[105, 105, 105, 105 ],dropout=gConfig['keeps'],model_dir=gConfig['model_dir'])
+  classifier = tf.contrib.learn.DNNClassifier(feature_columns=feature_cols,hidden_units=[105, 105, 105, 105 ,105, 105, 105, 105],n_classes=2,optimizer=tf.train.AdamOptimizer(1e-4),dropout=gConfig['keeps'],model_dir=gConfig['model_dir'])
   
   loss_score=1
   # 开始进行训练，只到满足条件后停止
@@ -65,14 +63,17 @@ def train():
       classifier.fit(input_fn=lambda: input_fn(training_set),steps=100)
       # 测试和评价模型的准确度
       ev = classifier.evaluate(input_fn=lambda: input_fn(test_set), steps=1)
-      accuracy_score = ev["accuracy"]
-      print("模型准确率: {0:f}".format(accuracy_score))
+      loss_score = ev["loss"]
+      accury=ev["accuracy"]
+      print(ev)
+      
+      print("模型准确率: {0:f}".format(accury))
 
 def init_session(sess,conf='config.ini'):
     global gConfig
     gConfig=getConfig.get_config(conf)
     feature_cols = [tf.contrib.layers.real_valued_column(k) for k in FEATURES]
-    model=tf.contrib.learn.DNNClassifier(feature_columns=feature_cols,hidden_units=[105, 105, 105, 105 ],model_dir=gConfig['model_dir'])
+    model=tf.contrib.learn.DNNClassifier(feature_columns=feature_cols,hidden_units=[105, 105, 105, 105 ,105, 105, 105, 105],n_classes=2,model_dir=gConfig['model_dir'])
     return sess, model
 
 def predict(sess,predict_set,model):
@@ -95,6 +96,3 @@ if __name__ == "__main__":
         print('Sever Usage:python3 app.py')
 
 
-
-
-        
