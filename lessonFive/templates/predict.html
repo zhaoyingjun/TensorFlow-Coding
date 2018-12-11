@@ -12,18 +12,21 @@
 
 
 
-<p><font class="font" size="3" face="arial" color="Black"> {{result_k}}:{{result_line}}</font></p>
+<div><p id="font" size="3" face="arial"> {{result_k}}:{{result_line}}</p></div>
 
 <script type="text/javascript">
-	fn()
 	function fn(argument) {
-		if(key==1){
-			var fontEle = document.getElementsByClass('font')
+		var fontEle = document.getElementById('font')
+		console.log({{key}})
+		if({{key}}==1){
 			    fontEle.style.color = 'red'
-				console.log(fontEle,key)
+				console.log(fontEle)
+		}else{
+			 fontEle.style.color = 'green'
 		}
 		// body...
 	}
+	fn()
 
 </script>
 
