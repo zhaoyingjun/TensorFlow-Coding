@@ -56,7 +56,7 @@ class cnnModel(object):
             print("Size of relu1 result : ", relu_layer1.shape)
             max_pooling_layer1 = tf.nn.max_pool(value=relu_layer1,
                                                         ksize=[1, 2, 2, 1],
-                                                        strides=[1, 1, 1, 1],
+                                                        strides=[1, 2, 2, 1],
                                                         padding="SAME")
             print("Size of maxpool1 result : ", max_pooling_layer1.shape)
 
@@ -69,18 +69,16 @@ class cnnModel(object):
                                                         padding="SAME")
             print("Size of maxpool2 result : ", max_pooling_layer2.shape)
 
-        
-            filters3, conv_layer3 = create_conv_layer(input_data=max_pooling_layer2, filter_size=3, num_filters=64)
+            # Conv layer with 2 filters and a filter sisze of 5x5.
+            filters3, conv_layer3 = create_conv_layer(input_data=max_pooling_layer2, filter_size=3, num_filters=128)
             relu_layer3 = tf.nn.relu(conv_layer3)
             print("Size of relu3 result : ", relu_layer3.shape)
             max_pooling_layer3 = tf.nn.max_pool(value=relu_layer3,
                                                         ksize=[1, 2, 2, 1],
                                                         strides=[1, 2, 2, 1],
-                                                        padding="VALID")
+                                                        padding="SAME")
             print("Size of maxpool3 result : ", max_pooling_layer3.shape)
-
-
-
+           
             filters4, conv_layer4 = create_conv_layer(input_data=max_pooling_layer3, filter_size=3, num_filters=128)
             relu_layer4 = tf.nn.relu(conv_layer4)
             print("Size of relu4 result : ", relu_layer4.shape)
@@ -111,19 +109,20 @@ class cnnModel(object):
                                                         strides=[1, 2, 2, 1],
                                                         padding="SAME")
             print("Size of maxpool6 result : ", max_pooling_layer6.shape)
-
-            # 将输出维度降为一维，并增加dropout防止过拟合
+            
+           
+            # Adding dropout layer before the fully connected layers to avoid overfitting.
             flattened_layer = dropout_flatten_layer(previous_layer=max_pooling_layer6, keep_prop=keep_prop)
 
-            # 全连接网络+dropout
+            # First fully connected (FC) layer. It accepts the result of the dropout layer after being flattened (1D).
             fc_resultl = fc_layer(flattened_layer=flattened_layer,
                                   num_inputs=flattened_layer.get_shape()[1:].num_elements(),
                                   num_outputs=200)
-            # 全连接网络+dropout，这里的网络输出的数量要和标注的数量一致
+            # Second fully connected layer accepting the output of the previous fully connected layer. Number of outputs is equal to the number of dataset classes.
             fc_result2 = fc_layer(flattened_layer=fc_resultl, num_inputs=fc_resultl.get_shape()[1:].num_elements(),
                                   num_outputs=num_classes)
             print("Fully connected layer results : ", fc_result2)
-            return fc_result2  
+            return fc_result2  # Returning the result of the last FC layer.
 
         def dropout_flatten_layer(previous_layer, keep_prop):
 
@@ -193,13 +192,13 @@ class cnnModel(object):
             return dataset_label_names[softmax_predictions_[0]]
         else:   
 
-        	cnn_feed_dict = {self.data_tensor: shuffled_data, self.label_tensor: shuffled_labels, keep_prop: gConfig['keeps']}
-        	softmax_predictions_, _ = sess.run([self.softmax_predictions, self.ops],feed_dict=cnn_feed_dict)
+            cnn_feed_dict = {self.data_tensor: shuffled_data, self.label_tensor: shuffled_labels, keep_prop: gConfig['keeps']}
+            softmax_predictions_, _ = sess.run([self.softmax_predictions, self.ops],feed_dict=cnn_feed_dict)
             # 统计预测争取的数量
-        	correct = np.array(np.where(softmax_predictions_ == shuffled_labels))
+            correct = np.array(np.where(softmax_predictions_ == shuffled_labels))
 
-        	accuracy = correct.size/(self.percent*gConfig['dataset_size']/100)
-        	return accuracy #输出准确率
+            accuracy = correct.size/(self.percent*gConfig['dataset_size']/100)
+            return accuracy #输出准确率
 
         """
         准确率（accuracy）： 正确预测占全部样本的比例
@@ -210,23 +209,6 @@ class cnnModel(object):
         
         
         """
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

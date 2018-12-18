@@ -57,8 +57,11 @@ def create_model(session,forward_only):
     if ckpt and ckpt.model_checkpoint_path:
         print("Reading model parameters from %s" % ckpt.model_checkpoint_path)
         model.saver.restore(session, ckpt.model_checkpoint_path)
+#        session.run(tf.global_variables_initializer())
         graph = tf.get_default_graph()
+
         return model,graph
+
     else:
         print("Created model with fresh parameters.")
         session.run(tf.global_variables_initializer())
@@ -97,7 +100,7 @@ def train():
 
     #读取训练集的数据到内存中
     dataset_array, dataset_labels = read_data(dataset_path=gConfig['dataset_path'], im_dim=gConfig['im_dim'],
-                                            num_channels=gConfig['num_channels'],num_files=gConfig['num_files'],images_per_file=gConfig['images_per_file'])
+                                                           num_channels=gConfig['num_channels'],num_files=gConfig['num_files'],images_per_file=gConfig['images_per_file'])
     #打印训练数据的维度
     print("Size of data : ", dataset_array.shape)
     #读取测试数据到内存中
@@ -111,13 +114,18 @@ def train():
         step_time, accuracy = 0.0, 0.0
         current_step = 0
         previous_correct = []
+
+        #shuffled_datas, shuffled_labels = get_batch(data=dataset_array, labels=dataset_labels,
+         #                                                    percent=gConfig['percent'])
+        #shuffled_datas_test, shuffled_labels_test = get_batch(data=dataset_array_test, labels=dataset_labels_test,
+          #                                                   percent=gConfig['percent']*5)
         # 开始训练循环，这里没有设置结束条件，当学习率下降到为0时停止
         while model.learning_rate.eval()>gConfig['end_learning_rate']:
 
             shuffled_datas, shuffled_labels = get_batch(data=dataset_array, labels=dataset_labels,
-                                                             percent=gConfig['percent'])
+                                                         percent=gConfig['percent'])
             shuffled_datas_test, shuffled_labels_test = get_batch(data=dataset_array_test, labels=dataset_labels_test,
-                                                             percent=gConfig['percent']*5)
+                                                           percent=gConfig['percent']*5)
 
             start_time = time.time()
             step_correct=model.step(sess,shuffled_datas,shuffled_labels,False)
@@ -127,8 +135,8 @@ def train():
 
             # 达到一个训练模型保存点后，将模型保存下来，并打印出这个保存点的平均准确率
             if current_step % gConfig['steps_per_checkpoint'] == 0:
-                #如果超过5次预测正确率没有升高则改变学习率
-                if len(previous_correct) > 2 and accuracy < min(previous_correct[-5:]):
+                #如果超过三次预测正确率没有升高则改变学习率
+                if len(previous_correct) > 2 and accuracy <min(previous_correct[-3:]):
                     sess.run(model.learning_rate_decay_op)
                 previous_correct.append(accuracy)
                 checkpoint_path = os.path.join(gConfig['working_directory'], "cnn.ckpt")
@@ -163,6 +171,7 @@ def train():
                 print("模型在测试集上的准确率为 : ", correct/(gConfig['percent']*gConfig['dataset_size']/100))
 
                 sys.stdout.flush()   
+            
 
 def init_session(sess,conf='config.ini'):
     global gConfig
