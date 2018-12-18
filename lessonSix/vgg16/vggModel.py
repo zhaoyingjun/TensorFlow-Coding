@@ -42,33 +42,33 @@ class vggModel(object):
                         weights_initializer=tf.truncated_normal_initializer(0.0, 0.01),
                         weights_regularizer=slim.l2_regularizer(0.0005)):
                          #第一段卷积堆叠，两层堆叠，conv3-64的意义是3*3的卷积核一共64个
-                         net = slim.repeat(input_data, 2, slim.conv2d, 64, [3, 3], scope='conv1')
-                         net = slim.max_pool2d(net, [2, 2], scope='pool1')
+                         net1 = slim.repeat(input_data, 2, slim.conv2d, 64, [3, 3], scope='conv1')
+                         net1_p = slim.max_pool2d(net1, [2, 2], scope='pool1')
                          #第二段卷积核堆叠，两层堆叠，128个3*3的卷积核，注意这里和感受野的区别
-                         net = slim.repeat(net, 2, slim.conv2d, 128, [3, 3], scope='conv2')
-                         net = slim.max_pool2d(net, [2, 2], scope='pool2')
+                         net2 = slim.repeat(net1_p, 2, slim.conv2d, 128, [3, 3], scope='conv2')
+                         net2_p = slim.max_pool2d(net2, [2, 2], scope='pool2')
                          #第三段卷积核堆叠，三层堆叠，256个3*3的卷积核，注意这里和感受野的区别
-                         net = slim.repeat(net, 3, slim.conv2d, 256, [3, 3], scope='conv3')
-                         net = slim.max_pool2d(net, [2, 2], scope='pool3')
+                         net3 = slim.repeat(net2_p, 3, slim.conv2d, 256, [3, 3], scope='conv3')
+                         net3_p = slim.max_pool2d(net3, [2, 2], scope='pool3')
                          #第四段卷积核堆叠，三层堆叠，512个3*3的卷积核，注意这里和感受野的区别
-                         net = slim.repeat(net, 3, slim.conv2d, 512, [3, 3], scope='conv4')
-                         net = slim.max_pool2d(net, [2, 2], scope='pool4')
+                         net4 = slim.repeat(net3_p, 3, slim.conv2d, 512, [3, 3], scope='conv4')
+                         net4_p = slim.max_pool2d(net4, [2, 2], scope='pool4')
                          #第五段卷积核堆叠，三层堆叠，512个3*3的卷积核，注意这里和感受野的区别
-                         net = slim.repeat(net, 3, slim.conv2d, 512, [3, 3], scope='conv5')
-                         net = slim.max_pool2d(net, [2, 2], scope='pool5')
+                         net5 = slim.repeat(net4_p, 3, slim.conv2d, 512, [3, 3], scope='conv5')
+                         net5_p = slim.max_pool2d(net5, [2, 2], scope='pool5')
                          #Flatten层用来将输入“压平”，即把多维的输入一维化，常用在从卷积层到全连接层的过渡。Flatten不影响batch的大小。
-                         net = slim.flatten(net, scope='flat')
+                         net_flat = slim.flatten(net5_p, scope='flat')
                          #全连接层
-                         net = slim.fully_connected(net, 4096, scope='fc1')
-                         net = slim.dropout(net, keep_prob=keep_prob, scope='dropt1')
+                         net_f1 = slim.fully_connected(net_flat, 4096, scope='fc1')
+                         net_d1 = slim.dropout(net_f1, keep_prob=keep_prob, scope='dropt1')
                           #全连接层
-                         net = slim.fully_connected(net, 4096, scope='fc2')
-                         net = slim.dropout(net, keep_prob=keep_prob, scope='dropt2')
+                         net_f2 = slim.fully_connected(net_d1, 4096, scope='fc2')
+                         net_d2 = slim.dropout(net_f2, keep_prob=keep_prob, scope='dropt2')
                           #全连接层
-                         net = slim.fully_connected(net, num_classes, scope='fc3')
-                         net = slim.softmax(net, scope='net')
+                         net_f3 = slim.fully_connected(net_d2, num_classes, scope='fc3')
+                         net_d3 = slim.softmax(net_f3, scope='net')
 
-                return net
+                return net_d3
 
         #这块内容和第一课的内容是一样的
         batch_size=gConfig['percent']*gConfig['dataset_size']/100
