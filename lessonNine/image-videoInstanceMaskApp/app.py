@@ -13,6 +13,7 @@ import execute
 
 from collections import Counter
 import text2audio
+import time
 
 #设置允许的文件格式
 ALLOWED_EXTENSIONS = set(['png', 'jpg', 'JPG', 'PNG', 'bmp'])
@@ -61,6 +62,7 @@ def maskImage():
 @app.route('/maskVideo', methods=['POST', 'GET']) 
 
 def maskVideo():
+    #execute.maskVideo()
     
       capture = cv2.VideoCapture(0)
 
@@ -68,10 +70,12 @@ def maskVideo():
       capture.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
       capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
       while True:
-          ret, frame = capture.read()
-          execute.maskVideo(frame)
-        #cv2.imshow('frame', frame)
-          time(30)
+           ret, frame = capture.read()
+           frame=execute.maskVideo(frame)
+           cv2.imshow('frame', frame)
+           #return make_response(frame)
+      capture.release()
+      cv2.destroyAllWindows()
 
 
 from gevent.pywsgi import WSGIServer

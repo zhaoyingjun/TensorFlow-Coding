@@ -151,8 +151,11 @@ def display_instances(image, boxes, masks, class_ids, class_names,
             ax.imshow(masked_image.astype(np.uint8))
             plt.savefig(image_file)
         else:
+            score = scores[i] if scores is not None else None
+            caption = '{} {:.2f}'.format(label, score) if score else label
+            masked_image=apply_mask(image, mask, color)
             masked_image = cv2.rectangle(masked_image, (x1, y1), (x2, y2), color, 2)
-            masked_image = cv2.putText(image, caption, (x1, y1), cv2.FONT_HERSHEY_COMPLEX, 0.7, color, 2)
+            masked_image = cv2.putText(masked_image, caption, (x1, y1), cv2.FONT_HERSHEY_COMPLEX, 0.7, color, 2)
             return masked_image
 
 class InferenceConfig(coco.CocoConfig):
@@ -200,9 +203,27 @@ def maskImage(image_file):
     display_instances(image, r['rois'], r['masks'], r['class_ids'],class_names, r['scores'],image_file=image_file)
     return image_file,results
 def maskVideo(frame):
-    results = model.detect([frame], verbose=0)
-    r = results[0]
-    frame = display_instances(frame, r['rois'], r['masks'], r['class_ids'], class_names, r['scores'],image_mask=False)
-    cv2.imshow('frame', frame)
+    #capture = cv2.VideoCapture(0)
+    #capture.set(cv2.CAP_PROP_FRAME_WIDTH, 720)
+    #capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 540)
+    #while True:
+        #ret, frame = capture.read()
+        results = model.detect([frame], verbose=0)
+        r = results[0]
+        frame = display_instances(
+            frame, r['rois'], r['masks'], r['class_ids'], class_names, r['scores'],image_mask=False
+        )
+        #cv2.imshow('frame', frame)
+        #if cv2.waitKey(1) & 0xFF == ord('q'):
+         #   break
+        return frame
+
+    #capture.release()
+    #cv2.destroyAllWindows()
+
+    #results = model.detect([frame], verbose=0)
+    #r = results[0]
+    #frame = display_instances(frame, r['rois'], r['masks'], r['class_ids'], class_names, r['scores'],image_mask=False)
+    #cv2.imshow('frame', frame)
     #return frame
 
