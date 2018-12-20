@@ -83,7 +83,7 @@ flags.DEFINE_integer("predict_batch_size", 8, "Total batch size for predict.")
 
 flags.DEFINE_float("learning_rate", 5e-5, "The initial learning rate for Adam.")
 
-flags.DEFINE_float("num_train_epochs", 3.0,
+flags.DEFINE_float("num_train_epochs", 300.0,
                    "Total number of training epochs to perform.")
 
 flags.DEFINE_float(
@@ -354,6 +354,77 @@ class ColaProcessor(DataProcessor):
           InputExample(guid=guid, text_a=text_a, text_b=None, label=label))
     return examples
 
+class SelfProcessor(DataProcessor):
+    """Processor for the CoLA data set (GLUE version)."""
+
+    def get_train_examples(self, data_dir):
+        file_path = os.path.join(data_dir, 'train.csv')
+        with open(file_path, 'r', encoding="utf-8") as f:
+            reader = f.readlines()
+        examples = []
+        for index, line in enumerate(reader):
+            guid = 'train-%d' % index
+            split_line = line.strip().split("\t")
+            print(split_line)
+            text_a = tokenization.convert_to_unicode(split_line[1])
+            text_b = tokenization.convert_to_unicode(split_line[2])
+            label = split_line[3]
+            examples.append(InputExample(guid=guid, text_a=text_a,
+                                         text_b=text_b, label=label))
+        return examples
+
+    def get_dev_examples(self, data_dir):
+        file_path = os.path.join(data_dir, 'val.csv')
+        with open(file_path, 'r', encoding="utf-8") as f:
+            reader = f.readlines()
+        examples = []
+        for index, line in enumerate(reader):
+            guid = 'train-%d' % index
+            split_line = line.strip().split("\t")
+            text_a = tokenization.convert_to_unicode(split_line[1])
+            text_b = tokenization.convert_to_unicode(split_line[2])
+            label = split_line[3]
+            examples.append(InputExample(guid=guid, text_a=text_a,
+                                         text_b=text_b, label=label))
+        return examples
+
+    def get_test_examples(self, data_dir):
+        """See base class."""
+        file_path = os.path.join(data_dir, 'test.csv')
+        with open(file_path, 'r', encoding="utf-8") as f:
+            reader = f.readlines()
+        examples = []
+        for index, line in enumerate(reader):
+            guid = 'train-%d' % index
+            split_line = line.strip().split("\t")
+            text_a = tokenization.convert_to_unicode(split_line[1])
+            text_b = tokenization.convert_to_unicode(split_line[2])
+            label = split_line[3]
+            examples.append(InputExample(guid=guid, text_a=text_a,
+                                         text_b=text_b, label=label))
+        return examples
+
+    def get_labels(self):
+        """See base class."""
+        return ["0", "1"]
+
+    def _create_examples(self, lines, set_type):
+        """Creates examples for the training and dev sets."""
+        examples = []
+        for (i, line) in enumerate(lines):
+            # Only the test set has a header
+            if set_type == "test" and i == 0:
+                continue
+            guid = "%s-%s" % (set_type, i)
+            if set_type == "test":
+                text_a = tokenization.convert_to_unicode(line[1])
+                label = "0"
+            else:
+                text_a = tokenization.convert_to_unicode(line[3])
+                label = tokenization.convert_to_unicode(line[1])
+            examples.append(
+                InputExample(guid=guid, text_a=text_a, text_b=None, label=label))
+        return examples
 
 def convert_single_example(ex_index, example, label_list, max_seq_length,
                            tokenizer):
@@ -377,24 +448,6 @@ def convert_single_example(ex_index, example, label_list, max_seq_length,
     if len(tokens_a) > max_seq_length - 2:
       tokens_a = tokens_a[0:(max_seq_length - 2)]
 
-  # The convention in BERT is:
-  # (a) For sequence pairs:
-  #  tokens:   [CLS] is this jack ##son ##ville ? [SEP] no it is not . [SEP]
-  #  type_ids: 0     0  0    0    0     0       0 0     1  1  1  1   1 1
-  # (b) For single sequences:
-  #  tokens:   [CLS] the dog is hairy . [SEP]
-  #  type_ids: 0     0   0   0  0     0 0
-  #
-  # Where "type_ids" are used to indicate whether this is the first
-  # sequence or the second sequence. The embedding vectors for `type=0` and
-  # `type=1` were learned during pre-training and are added to the wordpiece
-  # embedding vector (and position vector). This is not *strictly* necessary
-  # since the [SEP] token unambiguously separates the sequences, but it makes
-  # it easier for the model to learn the concept of sequences.
-  #
-  # For classification tasks, the first vector (corresponding to [CLS]) is
-  # used as as the "sentence vector". Note that this only makes sense because
-  # the entire model is fine-tuned.
   tokens = []
   segment_ids = []
   tokens.append("[CLS]")
@@ -746,6 +799,7 @@ def main(_):
       "mnli": MnliProcessor,
       "mrpc": MrpcProcessor,
       "xnli": XnliProcessor,
+      "sim": SelfProcessor  # 添加自己的processor
   }
 
   if not FLAGS.do_train and not FLAGS.do_eval and not FLAGS.do_predict:
@@ -893,6 +947,7 @@ def main(_):
         drop_remainder=predict_drop_remainder)
 
     result = estimator.predict(input_fn=predict_input_fn)
+    print(result)
 
     output_predict_file = os.path.join(FLAGS.output_dir, "test_results.tsv")
     with tf.gfile.GFile(output_predict_file, "w") as writer:

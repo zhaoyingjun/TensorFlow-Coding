@@ -12,38 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""
-代码结构：
-
-BertConfig：获取配置，这谷歌大神的代码风格真实多变
-
-BertModel：BertModel的方法类，常规的里面包含：
-a):__init__
-b):各种获取变量的方法，这个很注意，其实是self的数据，但是都定义一个无参的方法
-c):gule 定义激活函数，这个是在RULE的基础上进行修改的
-d):定义激活函数获取函数
-e):定义函数从checkpoint文件中获取参数值，恢复计算图
-f):定义dropout函数和归一化函数
-g):定义embedding_lookup
-h):定义输入embedding后进行的各种操作
-i):定义mask函数
-j):定义attention_layer，重点，这里面有我们所说的核心之一transformer_model
-
-总的来说，代码里出处展示了大力出奇迹的豪气和完美的工程实现
-
-
-
-知识点：
-
-tf.train.list_variables
-
-six.iteritems(a)返回的是<dictionary-itemiterator object at 0x7fa3101cb940>
-
-json.dumps：
-
-
-
-"""
+"""The main BERT model and related functions."""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -116,7 +85,7 @@ class BertConfig(object):
     for (key, value) in six.iteritems(json_object):
       config.__dict__[key] = value
     return config
-#知识点：json.dumps：dict2json json.loads：json2dict,JSON字符串用json.dumps, json.loads JSON文件名用json.dump, json.load
+
   @classmethod
   def from_json_file(cls, json_file):
     """Constructs a `BertConfig` from a json file of parameters."""
@@ -185,11 +154,6 @@ class BertModel(object):
       ValueError: The config is invalid or one of the input tensor shapes
         is invalid.
     """
-    #copy.copy:拷贝了最外围的对象本身，内部的元素都只是拷贝了一个引用而已。也就是，把对象复制一遍，但是该对象中引用的其他对象我不复制
-    #copy.deepcopy:外围和内部元素都进行了拷贝对象本身，而不是引用。也就是，把对象复制一遍，并且该对象中引用的其他对象我也复制
-    #tf.ones
-    #tf.zeros
-    #tf.variable_scope
     config = copy.deepcopy(config)
     if not is_training:
       config.hidden_dropout_prob = 0.0
@@ -252,7 +216,7 @@ class BertModel(object):
             initializer_range=config.initializer_range,
             do_return_all_layers=True)
 
-      self.sequence_output = self.all_encoder_layers[-1]#思考这句取的值是什么
+      self.sequence_output = self.all_encoder_layers[-1]
       # The "pooler" converts the encoded sequence tensor of shape
       # [batch_size, seq_length, hidden_size] to a tensor of shape
       # [batch_size, hidden_size]. This is necessary for segment-level
@@ -261,9 +225,6 @@ class BertModel(object):
       with tf.variable_scope("pooler"):
         # We "pool" the model by simply taking the hidden state corresponding
         # to the first token. We assume that this has been pre-trained
-
-        #tf.sequeeze:给定张量输入，此操作返回相同类型的张量，并删除所有尺寸为1的尺寸
-        #tf.layers.dense 增加一层网络 全连接
         first_token_tensor = tf.squeeze(self.sequence_output[:, 0:1, :], axis=1)
         self.pooled_output = tf.layers.dense(
             first_token_tensor,
@@ -353,7 +314,7 @@ def get_activation(activation_string):
   else:
     raise ValueError("Unsupported activation: %s" % act)
 
-#re.match：这个经常使用到，大家要去学习正则表达式
+
 def get_assignment_map_from_checkpoint(tvars, init_checkpoint):
   """Compute the union of the current variables and checkpoint variables."""
   assignment_map = {}
@@ -845,7 +806,7 @@ def transformer_model(input_tensor,
         "The hidden size (%d) is not a multiple of the number of attention "
         "heads (%d)" % (hidden_size, num_attention_heads))
 
-  attention_head_size = int(hidden_size // num_attention_heads)
+  attention_head_size = int(hidden_size / num_attention_heads)
   input_shape = get_shape_list(input_tensor, expected_rank=3)
   batch_size = input_shape[0]
   seq_length = input_shape[1]
