@@ -110,7 +110,7 @@ def train(gen_config):
         gen_loss_summary = tf.Summary()
         gen_writer = tf.summary.FileWriter(gen_config.tensorboard_dir, sess.graph)
 
-        while True:
+        while current_step<100:
             # Choose a bucket according to disc_data distribution. We pick a random number
             # in [0, 1] and use the corresponding interval in train_buckets_scale.
             random_number_01 = np.random.random_sample()

@@ -143,7 +143,7 @@ def hier_train(config_disc, config_evl):
         step_loss_summary = tf.Summary()
         disc_writer = tf.summary.FileWriter(config_disc.tensorboard_dir, session.graph)
 
-        while True:
+        while current_step<300:
             random_number_01 = np.random.random_sample()
             bucket_id = min([i for i in xrange(len(train_buckets_scale))
                              if train_buckets_scale[i] > random_number_01])

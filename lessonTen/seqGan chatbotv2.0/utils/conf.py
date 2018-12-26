@@ -69,9 +69,17 @@ class GSTConfig(object):
     buckets =        [(5, 10), (10, 15), (20, 25), (40, 50)]
     buckets_concat = [(5, 10), (10, 15), (20, 25), (40, 50), (100, 50)]
 
-class data_utils(object):
+class source_data_utils(object):
+
+    train_enc = "./gen_data/train.query"
+    train_dec = "./gen_data/train.answer"
+    test_enc =  "./gen_data/test.query"
+    test_dec =  "./gen_data/test.answer"
+    resource_data = "./data_source/dgk_shooter_z.conv.txt"
 
     TEST_SIZE=10000
+    e = "E"
+    m = "M"
     
         
 
