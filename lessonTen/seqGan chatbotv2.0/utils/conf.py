@@ -75,9 +75,9 @@ class source_data_utils(object):
     train_dec = "./gen_data/train.answer"
     test_enc =  "./gen_data/test.query"
     test_dec =  "./gen_data/test.answer"
-    resource_data = "./data_source/dgk_shooter_z.conv.txt"
+    resource_data = "./data_source/conv.txt"
 
-    TEST_SIZE=10000
+    TEST_SIZE=400
     e = "E"
     m = "M"
     
