@@ -110,7 +110,7 @@ def train(gen_config):
         gen_loss_summary = tf.Summary()
         gen_writer = tf.summary.FileWriter(gen_config.tensorboard_dir, sess.graph)
 
-        while current_step<100:
+        while current_step<1000:
             # Choose a bucket according to disc_data distribution. We pick a random number
             # in [0, 1] and use the corresponding interval in train_buckets_scale.
             random_number_01 = np.random.random_sample()
@@ -239,6 +239,7 @@ def decoder(gen_config):
 
             encoder_inputs, decoder_inputs, target_weights, batch_source_encoder, batch_source_decoder = \
                 model.get_batch(train_set, bucket_id, gen_config.batch_size)
+          
 
             _, _, out_logits = model.step(sess, encoder_inputs, decoder_inputs, target_weights, bucket_id,
                                           forward_only=True)
@@ -255,14 +256,7 @@ def decoder(gen_config):
 
             for seq in tokens_t:
                 if data_utils.EOS_ID in seq:
-                    '''
-                    seq[:seq.index(data_utils.EOS_ID)][:gen_config.buckets[bucket_id][1]]
-                    seq是一维的，乍一看以为上面表达式把他当作二维处理，但实际上s=[1,2,3,4]
-                    s[:3][:2]输出的是[1,2]，也就是先截取[0:3]的数据，在截取[0:2]的数据
-                    而没有冒号，即s[3][2]是当做二维处理，在这边这么写是错的
-                    '''
-
-                    #resps的shape为[[[vocab_size]],.......]  倒数第二层：decoder_size  最外一层：batch_size
+                    
                     resps.append(seq[:seq.index(data_utils.EOS_ID)][:gen_config.buckets[bucket_id][1]])
                 else:
                     resps.append(seq[:gen_config.buckets[bucket_id][1]])
@@ -272,7 +266,6 @@ def decoder(gen_config):
                 answer_str = " ".join([str(rev_vocab[an]) for an in answer[:-1]])
                 disc_train_answer.write(answer_str)
                 disc_train_answer.write("\n")
-
                 query_str = " ".join([str(rev_vocab[qu]) for qu in query])
                 disc_train_query.write(query_str)
                 disc_train_query.write("\n")

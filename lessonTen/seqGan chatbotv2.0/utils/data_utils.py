@@ -119,7 +119,7 @@ def initialize_vocabulary(vocabulary_path):
   """
   if gfile.Exists(vocabulary_path):
     rev_vocab = []
-    with gfile.GFile(vocabulary_path, mode="rb") as f:
+    with open(vocabulary_path, mode="r") as f:
       rev_vocab.extend(f.readlines())
     rev_vocab = [line.strip() for line in rev_vocab]
     vocab = dict([(x, y) for (y, x) in enumerate(rev_vocab)])

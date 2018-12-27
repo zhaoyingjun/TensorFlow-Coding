@@ -306,36 +306,44 @@ def decoder_online(sess,gen_config, model, vocab,rev_vocab, inputs):
     # Get output logits for the sentence.
     _, _, output_logits = model.step(sess, encoder_inputs, decoder_inputs, target_weights, bucket_id, True)
     
-    # This is a greedy decoder - outputs are just argmaxes of output_logits.
-    outputs = [int(np.argmax(logit, axis=1)) for logit in output_logits[0]]
-    
     # If there is an EOS symbol in outputs, cut them at that point.
-    if data_utils.EOS_ID in outputs:
-        outputs = outputs[:outputs.index(prepareData.EOS_ID)]
+    tokens = []
+    resps = []
+    for seq in output_logits:
+        token = []
+        for t in seq:
+            token.append(int(np.argmax(t, axis=0)))
+        tokens.append(token)
+        tokens_t = []
+        for col in range(len(tokens[0])):
+            tokens_t.append([tokens[row][col] for row in range(len(tokens))])
 
-    return " ".join([tf.compat.as_str(rev_vocab[output]) for output in outputs])
+        for seq in tokens_t:
+            if data_utils.EOS_ID in seq:
+                resps.append(seq[:seq.index(data_utils.EOS_ID)][:gen_config.buckets[bucket_id][1]])
+            else:
+                resps.append(seq[:gen_config.buckets[bucket_id][1]])
+    for resp in resps:
+        resq_str= " ".join([tf.compat.as_str(rev_vocab[output]) for output in resp])
+    return resq_str
 
-     
-            
-
-        
 
 def main(_):
     # step_1 training gen model
-    gen_pre_train()
+    #gen_pre_train()
 
-    print("*****请注释掉本行代码，以及上行代码gen_pre_train()，下行代码sys.exit(0)然后继续执行execute.py********")
-    sys.exit(0)
+    #print("*****请注释掉本行代码，以及上行代码gen_pre_train()，下行代码sys.exit(0)然后继续执行execute.py********")
+    #sys.exit(0)
     # step_2 gen training data for disc
-    gen_disc()
+    #gen_disc()
 
-    print("*****请注释掉本行代码，以及上行代码gen_disc()，下行代码sys.exit(0)然后继续执行execute.py********")
-    sys.exit(0)
+    #print("*****请注释掉本行代码，以及上行代码gen_disc()，下行代码sys.exit(0)然后继续执行execute.py********")
+    #sys.exit(0)
 
     # step_3 training disc model
-    disc_pre_train()
-    print("*****请注释掉本行代码，以及上行代码disc_pre_train()，下行代码sys.exit(0)然后继续执行execute.py********")
-    sys.exit(0)
+    #disc_pre_train()
+    #print("*****请注释掉本行代码，以及上行代码disc_pre_train()，下行代码sys.exit(0)然后继续执行execute.py********")
+    #sys.exit(0)
     # step_4 training al model
     al_train()
 

@@ -5,7 +5,7 @@ class disc_config(object):
     batch_size = 64
     lr = 0.2
     lr_decay = 0.9
-    vocab_size = 25000
+    vocab_size = 2500
     embed_dim = 64
     steps_per_checkpoint = 20
     #hidden_neural_size = 128
@@ -36,7 +36,7 @@ class gen_config(object):
     batch_size = 64
     emb_dim = 64
     num_layers = 2
-    vocab_size = 25000
+    vocab_size = 2500
     train_dir = "./gen_data/"
     name_model = "st_model"
     tensorboard_dir = "./tensorboard/gen_log/"
@@ -59,7 +59,7 @@ class GSTConfig(object):
     batch_size = 256
     emb_dim = 1024
     num_layers = 2
-    vocab_size = 25000
+    vocab_size = 2500
     train_dir = "./gst_data/"
     name_model = "st_model"
     tensorboard_dir = "./tensorboard/gst_log/"
