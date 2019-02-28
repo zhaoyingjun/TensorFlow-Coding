@@ -139,14 +139,14 @@ class cnnModel(object):
             return fc_resultl
         batch_size=gConfig['percent']*gConfig['dataset_size']/100
         self.data_tensor=tf.placeholder(tf.float32,shape=[batch_size,gConfig['im_dim'], gConfig['im_dim'],gConfig['num_channels']],name='data_tensor')
-        self.label_tensor=tf.placeholder(tf.int32,shape=[batch_size],name='label_tensor')
+        self.label_tensor=tf.placeholder(tf.int32,shape=[batch_size,1],name='label_tensor')
         keep_prop=tf.Variable(initial_value=0.5,name="keep_prop")
         self.fc_result=create_CNN(input_data=self.data_tensor,num_classes=gConfig['num_dataset_classes'],keep_prop=gConfig['keeps'])
-        self.softmax_predictions=tf.argmax(self.softmax_propabilities,axis=1)
+        self.softmax_predictions=tf.argmax(self.fc_result,axis=1)
             
         
         #将label变成one-hot编码，因为softmax_propabilities是一个数组，是10个概率，每个概率代表着预测结果属于其index类的概率，为了计算交叉熵，我们需要把label也转换成一个数组
-        self.label_tensor=tf.one_hot(int(batch_size),self.label_tensor,10)
+        self.label_tensor=tf.one_hot(self.label_tensor,10)
         #计算交叉熵
         cross_entropy=tf.nn.softmax_cross_entropy_with_logits(logits=self.fc_result,labels=self.label_tensor)
         cost=tf.reduce_mean(cross_entropy)
@@ -173,16 +173,15 @@ class cnnModel(object):
             print(dataset_array)
             feed_dict_test={data_tensor:dataset_array,keep_prop:1.0
             }
-            softmax_propabilities_, softmax_predictions_ = sess.run([self.softmax_propabilities, self.softmax_predictions],
-                                                         feed_dict=feed_dict_test)
+            softmax_predictions_ = sess.run(self.softmax_predictions,feed_dict=feed_dict_test)
 
             file=gConfig['dataset_path'] + "batches.meta"
             patch_bin_file = open(file, 'rb')
             label_names_dict = pickle.load(patch_bin_file)
-            print(label_names_dict)
-            print(softmax_predictions_[0])
-            print(softmax_predictions_)
-            print(Counter(softmax_predictions_).most_common(1))
+            #print(label_names_dict)
+            #print(softmax_predictions_[0])
+            #print(softmax_predictions_)
+            #print(Counter(softmax_predictions_).most_common(1))
             
             #k=Counter(softmax_predictions_).most_common(1)
             #print(k)
