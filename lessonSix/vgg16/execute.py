@@ -58,7 +58,6 @@ def create_model(session,forward_only):
     if ckpt and ckpt.model_checkpoint_path:
         print("Reading model parameters from %s" % ckpt.model_checkpoint_path)
         model.saver.restore(session, ckpt.model_checkpoint_path)
-        session.run(tf.global_variables_initializer())
         graph = tf.get_default_graph()
 
         return model,graph
@@ -132,10 +131,10 @@ def train():
             # 达到一个训练模型保存点后，将模型保存下来，并打印出这个保存点的平均准确率
             if current_step % gConfig['steps_per_checkpoint'] == 0:
                 #如果超过三次预测正确率没有升高则改变学习率
-                if len(previous_correct) > 2 and accuracy == min(previous_correct[-3:]):
+                if len(previous_correct) > 2 and accuracy < min(previous_correct[-5:]):
                     sess.run(model.learning_rate_decay_op)
                 previous_correct.append(accuracy)
-                checkpoint_path = os.path.join(gConfig['working_directory'], "cnn.ckpt")
+                checkpoint_path = os.path.join(gConfig['working_directory'], "vgg.ckpt")
                 #saver=tf.train.Saver()
                 model.saver.save(sess, checkpoint_path,global_step=model.global_step)
 
@@ -147,11 +146,11 @@ def train():
                 softmax_predictions = tf.argmax(softmax_propabilities, axis=1)
                 data_tensor = graph.get_tensor_by_name(name="data_tensor:0")
                 label_tensor = graph.get_tensor_by_name(name="label_tensor:0")
-                keep_prop = graph.get_tensor_by_name(name="keep_prop:0")
+                keep_prob = graph.get_tensor_by_name(name="keep_prob:0")
 
                 feed_dict_testing = {data_tensor: shuffled_datas_test,
                     label_tensor: shuffled_labels_test,
-                     keep_prop: 1.0}
+                     keep_prob: 1.0}
 
                 softmax_propabilities_, softmax_predictions_ = sess.run([softmax_propabilities, softmax_predictions],
                                                       feed_dict=feed_dict_testing)

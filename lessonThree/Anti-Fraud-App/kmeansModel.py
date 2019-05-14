@@ -3,6 +3,9 @@ import numpy as np
 from six.moves import xrange 
 import pandas as pd
 import getConfig
+gConfig={}
+gConfig=getConfig.get_config(config_file='config.ini')
+
 
 """
 代码结构：
@@ -35,7 +38,8 @@ tf.contrib.factorization.KMeansClustering：这个是Kmeans聚类的类，涵盖
 """
 
 def serving_input_receiver_fn():
-    feature_spec = {"x": tf.FixedLenFeature(dtype=tf.float32, shape=[12])}
+    k=gConfig['encoutlen']
+    feature_spec = {"x": tf.FixedLenFeature(dtype=tf.float32, shape=[k])}
     model_placeholder = tf.placeholder(dtype=tf.string,shape=[None],name='input')
     receiver_tensors = {"model_inputs": model_placeholder}
     features = tf.parse_example(model_placeholder, feature_spec)
@@ -43,8 +47,6 @@ def serving_input_receiver_fn():
 
 def trainAndSaveModel(input_set,steps):
 
-    gConfig={}
-    gConfig=getConfig.get_config(config_file='config.ini')
 
     num_epochs=gConfig['num_epochs']
     num_clusters=gConfig['num_clusters']  

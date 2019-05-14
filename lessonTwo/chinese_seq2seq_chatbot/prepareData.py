@@ -96,5 +96,33 @@ def prepare_custom_data(working_directory, train_enc, train_dec, test_enc, test_
 
     return (enc_train_ids_path, dec_train_ids_path, enc_dev_ids_path, dec_dev_ids_path, enc_vocab_path, dec_vocab_path)
 
+# 用于语句切割的正则表达
+_WORD_SPLIT = re.compile(b"([.,!?\"':;)(])")
+_DIGIT_RE = re.compile(br"\d")
 
+def basic_tokenizer(sentence):
+  #将一个语句中的字符切割成一个list，这样是为了下一步进行向量化训练
+  words = []
+  for space_separated_fragment in sentence.strip().split():
+    words.extend(re.split(_WORD_SPLIT, space_separated_fragment))
+  return [w for w in words if w]
+
+def sentence_to_token_ids(sentence, vocabulary, normalize_digits=True):#将输入语句从中文字符转换成数字符号
+
+  words = basic_tokenizer(sentence)
+  if not normalize_digits:
+    return [vocabulary.get(w, UNK_ID) for w in words]
+ # # Normalize digits by 0 before looking words up in the vocabulary.
+  return [vocabulary.get(re.sub(_DIGIT_RE, b"0", w), UNK_ID) for w in words]
+
+def initialize_vocabulary(vocabulary_path):#初始化字典，这里的操作与上面的48行的的作用是一样的，是对调字典中的key-value
+   if gfile.Exists(vocabulary_path):
+    rev_vocab = []
+    with open(vocabulary_path, "r") as f:
+      rev_vocab.extend(f.readlines())
+      rev_vocab = [line.strip() for line in rev_vocab]
+      vocab = dict([(x, y) for (y, x) in enumerate(rev_vocab)])
+    return vocab, rev_vocab
+   else:
+    raise ValueError("Vocabulary file %s not found.", vocabulary_path)
 

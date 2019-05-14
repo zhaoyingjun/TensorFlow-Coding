@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>油压漏油预测模型</title>
+</head>
+<body>
+
+<div align="center" style="border:1px solid green">
+	<font size="6" color="blue">油压系统漏油预测：</font>
+</div>
+
+
+
+<div><p id="font" size="3" face="arial"> {{result_k}}:{{result_line}}</p></div>
+
+<script type="text/javascript">
+	function fn(argument) {
+		var fontEle = document.getElementById('font')
+		console.log({{key}})
+		if({{key}}==1){
+			    fontEle.style.color = 'red'
+				console.log(fontEle)
+		}else{
+			 fontEle.style.color = 'green'
+		}
+		// body...
+	}
+	fn()
+
+</script>
+
+
+ 
+</body>
+</html>

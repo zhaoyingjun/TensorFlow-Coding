@@ -45,42 +45,74 @@ class cnnModel(object):
             conv_layer = tf.nn.conv2d(input=input_data,
                                               filter=filters,
                                               strides=[1, 1, 1, 1],
-                                              padding="VALID")
+                                              padding="SAME")
             print("Size of conv result : ", conv_layer.shape)
 
             return filters, conv_layer
 
         def create_CNN(input_data, num_classes, keep_prop):
-            filters1, conv_layer1 = create_conv_layer(input_data=input_data, filter_size=5, num_filters=4)
+            filters1, conv_layer1 = create_conv_layer(input_data=input_data, filter_size=3, num_filters=64)
             relu_layer1 = tf.nn.relu(conv_layer1)
             print("Size of relu1 result : ", relu_layer1.shape)
             max_pooling_layer1 = tf.nn.max_pool(value=relu_layer1,
                                                         ksize=[1, 2, 2, 1],
-                                                        strides=[1, 1, 1, 1],
-                                                        padding="VALID")
+                                                        strides=[1, 2, 2, 1],
+                                                        padding="SAME")
             print("Size of maxpool1 result : ", max_pooling_layer1.shape)
 
-            filters2, conv_layer2 = create_conv_layer(input_data=max_pooling_layer1, filter_size=7, num_filters=3)
+            filters2, conv_layer2 = create_conv_layer(input_data=max_pooling_layer1, filter_size=3, num_filters=64)
             relu_layer2 = tf.nn.relu(conv_layer2)
             print("Size of relu2 result : ", relu_layer2.shape)
             max_pooling_layer2 = tf.nn.max_pool(value=relu_layer2,
                                                         ksize=[1, 2, 2, 1],
-                                                        strides=[1, 1, 1, 1],
-                                                        padding="VALID")
+                                                        strides=[1, 2, 2, 1],
+                                                        padding="SAME")
             print("Size of maxpool2 result : ", max_pooling_layer2.shape)
 
             # Conv layer with 2 filters and a filter sisze of 5x5.
-            filters3, conv_layer3 = create_conv_layer(input_data=max_pooling_layer2, filter_size=5, num_filters=2)
+            filters3, conv_layer3 = create_conv_layer(input_data=max_pooling_layer2, filter_size=3, num_filters=128)
             relu_layer3 = tf.nn.relu(conv_layer3)
             print("Size of relu3 result : ", relu_layer3.shape)
             max_pooling_layer3 = tf.nn.max_pool(value=relu_layer3,
                                                         ksize=[1, 2, 2, 1],
-                                                        strides=[1, 1, 1, 1],
-                                                        padding="VALID")
+                                                        strides=[1, 2, 2, 1],
+                                                        padding="SAME")
             print("Size of maxpool3 result : ", max_pooling_layer3.shape)
-
+           
+            filters4, conv_layer4 = create_conv_layer(input_data=max_pooling_layer3, filter_size=3, num_filters=128)
+            relu_layer4 = tf.nn.relu(conv_layer4)
+            print("Size of relu4 result : ", relu_layer4.shape)
+            max_pooling_layer4 = tf.nn.max_pool(value=relu_layer4,
+                                                        ksize=[1, 2, 2, 1],
+                                                        strides=[1, 2, 2, 1],
+                                                        padding="SAME")
+            print("Size of maxpool4 result : ", max_pooling_layer4.shape)
+            
+            
+            
+            filters5, conv_layer5 = create_conv_layer(input_data=max_pooling_layer4, filter_size=3, num_filters=128)
+            relu_layer5 = tf.nn.relu(conv_layer5)
+            print("Size of relu5 result : ", relu_layer5.shape)
+            max_pooling_layer5 = tf.nn.max_pool(value=relu_layer5,
+                                                        ksize=[1, 2, 2, 1],
+                                                        strides=[1, 2, 2, 1],
+                                                        padding="SAME")
+            print("Size of maxpool5 result : ", max_pooling_layer5.shape)
+            
+            
+            
+            filters6, conv_layer6 = create_conv_layer(input_data=max_pooling_layer5, filter_size=3, num_filters=128)
+            relu_layer6 = tf.nn.relu(conv_layer6)
+            print("Size of relu6 result : ", relu_layer6.shape)
+            max_pooling_layer6 = tf.nn.max_pool(value=relu_layer6,
+                                                        ksize=[1, 2, 2, 1],
+                                                        strides=[1, 2, 2, 1],
+                                                        padding="SAME")
+            print("Size of maxpool6 result : ", max_pooling_layer6.shape)
+            
+           
             # Adding dropout layer before the fully connected layers to avoid overfitting.
-            flattened_layer = dropout_flatten_layer(previous_layer=max_pooling_layer3, keep_prop=keep_prop)
+            flattened_layer = dropout_flatten_layer(previous_layer=max_pooling_layer6, keep_prop=keep_prop)
 
             # First fully connected (FC) layer. It accepts the result of the dropout layer after being flattened (1D).
             fc_resultl = fc_layer(flattened_layer=flattened_layer,
@@ -107,18 +139,16 @@ class cnnModel(object):
             return fc_resultl
         batch_size=gConfig['percent']*gConfig['dataset_size']/100
         self.data_tensor=tf.placeholder(tf.float32,shape=[batch_size,gConfig['im_dim'], gConfig['im_dim'],gConfig['num_channels']],name='data_tensor')
-        self.label_tensor=tf.placeholder(tf.int32,shape=[batch_size],name='label_tensor')
+        self.label_tensor=tf.placeholder(tf.int32,shape=[batch_size,1],name='label_tensor')
         keep_prop=tf.Variable(initial_value=0.5,name="keep_prop")
         self.fc_result=create_CNN(input_data=self.data_tensor,num_classes=gConfig['num_dataset_classes'],keep_prop=gConfig['keeps'])
-        self.softmax_propabilities=tf.nn.softmax(self.fc_result,name="softmax_probs")
-        self.softmax_predictions=tf.argmax(self.softmax_propabilities,axis=1)
+        self.softmax_predictions=tf.argmax(self.fc_result,axis=1)
             
         
         #将label变成one-hot编码，因为softmax_propabilities是一个数组，是10个概率，每个概率代表着预测结果属于其index类的概率，为了计算交叉熵，我们需要把label也转换成一个数组
-        self.label_tensor=tf.one_hot(int(batch_size),self.label_tensor,10)
+        self.label_tensor=tf.one_hot(self.label_tensor,10)
         #计算交叉熵
-        cross_entropy=tf.nn.sparse_softmax_cross_entropy_with_logits(logits=self.softmax_propabilities,
-                                                              labels=self.label_tensor)
+        cross_entropy=tf.nn.softmax_cross_entropy_with_logits(logits=self.fc_result,labels=self.label_tensor)
         cost=tf.reduce_mean(cross_entropy)
 
         self.ops=tf.train.GradientDescentOptimizer(self.learning_rate).minimize(cost,global_step=self.global_step)
@@ -143,16 +173,15 @@ class cnnModel(object):
             print(dataset_array)
             feed_dict_test={data_tensor:dataset_array,keep_prop:1.0
             }
-            softmax_propabilities_, softmax_predictions_ = sess.run([self.softmax_propabilities, self.softmax_predictions],
-                                                         feed_dict=feed_dict_test)
+            softmax_predictions_ = sess.run(self.softmax_predictions,feed_dict=feed_dict_test)
 
             file=gConfig['dataset_path'] + "batches.meta"
             patch_bin_file = open(file, 'rb')
             label_names_dict = pickle.load(patch_bin_file)
-            print(label_names_dict)
-            print(softmax_predictions_[0])
-            print(softmax_predictions_)
-            print(Counter(softmax_predictions_).most_common(1))
+            #print(label_names_dict)
+            #print(softmax_predictions_[0])
+            #print(softmax_predictions_)
+            #print(Counter(softmax_predictions_).most_common(1))
             
             #k=Counter(softmax_predictions_).most_common(1)
             #print(k)
@@ -160,13 +189,13 @@ class cnnModel(object):
             return dataset_label_names[softmax_predictions_[0]]
         else:   
 
-        	cnn_feed_dict = {self.data_tensor: shuffled_data, self.label_tensor: shuffled_labels, keep_prop: gConfig['keeps']}
-        	softmax_predictions_, _ = sess.run([self.softmax_predictions, self.ops],feed_dict=cnn_feed_dict)
+            cnn_feed_dict = {self.data_tensor: shuffled_data, self.label_tensor: shuffled_labels, keep_prop: gConfig['keeps']}
+            softmax_predictions_, _ = sess.run([self.softmax_predictions, self.ops],feed_dict=cnn_feed_dict)
             # 统计预测争取的数量
-        	correct = np.array(np.where(softmax_predictions_ == shuffled_labels))
+            correct = np.array(np.where(softmax_predictions_ == shuffled_labels))
 
-        	accuracy = correct.size/(self.percent*gConfig['dataset_size']/100)
-        	return accuracy #输出准确率
+            accuracy = correct.size/(self.percent*gConfig['dataset_size']/100)
+            return accuracy #输出准确率
 
         """
         准确率（accuracy）： 正确预测占全部样本的比例
@@ -177,23 +206,6 @@ class cnnModel(object):
         
         
         """
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
