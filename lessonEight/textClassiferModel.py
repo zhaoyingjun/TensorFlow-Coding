@@ -113,7 +113,7 @@ def train_input_fn():
     dataset = tf.data.Dataset.from_tensor_slices((x_train, x_len_train, y_train))
     dataset = dataset.shuffle(buffer_size=len(x_train_variable))
     dataset = dataset.batch(100)
-    dataset = dataset.map(parser)
+    dataset = dataset.map(parser,num_parallel_calls=tf.data.experimental.AUTOTUNE)
     dataset = dataset.repeat()
     iterator = dataset.make_one_shot_iterator()
     return iterator.get_next()
@@ -121,7 +121,7 @@ def train_input_fn():
 def eval_input_fn():
     dataset = tf.data.Dataset.from_tensor_slices((x_test, x_len_test, y_test))
     dataset = dataset.batch(100)
-    dataset = dataset.map(parser)
+    dataset = dataset.map(parser,num_parallel_calls=tf.data.experimental.AUTOTUNE)
     iterator = dataset.make_one_shot_iterator()
     return iterator.get_next()
 
